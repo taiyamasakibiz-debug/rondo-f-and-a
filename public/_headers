@@ -1,0 +1,9 @@
+# Cloudflare Pages 用。Service Worker と manifest は常に最新を取りに行く
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# ビルドでファイル名にハッシュが付くので長くキャッシュしてよい
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

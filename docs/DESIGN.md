@@ -254,7 +254,7 @@ type ProblemTemplate = {
 | スキーマ検証 | Zod | 問題データ、書き出した JSON |
 | テスト | Vitest（＋ Testing Library） | 計算エンジンはテスト必須 |
 | PWA | vite-plugin-pwa | 新しい版が出たら更新を知らせる |
-| コード品質 | ESLint + Prettier | |
+| コード品質 | oxlint + Prettier | oxlint は Vite の標準テンプレートに入っている高速なリンター |
 | デプロイ | Cloudflare Pages | main へ push で本番、PR ごとにプレビュー URL |
 
 ### 数値の扱い
@@ -320,15 +320,15 @@ domain はどこにも依存しない
 各フェーズの終わりに Cloudflare Pages のプレビューで動作を確認する。
 
 ### フェーズ 0：土台づくり
-- [ ] v1 を `v1-legacy` タグで保存する
-- [ ] Vite + React + TypeScript で作り直し、v1 のファイルは片づける
-- [ ] Tailwind v4、shadcn/ui、Motion を導入する
-- [ ] ESLint、Prettier、Vitest を設定する
+- [x] v1 を `v1-legacy` タグで保存する
+- [x] Vite + React + TypeScript で作り直し、v1 のファイルは片づける
+- [x] Tailwind v4、shadcn/ui、Motion を導入する
+- [x] oxlint、Prettier、Vitest を設定する
 - [ ] Claude Design のデザインシステムを取り込む（トークンを Tailwind のテーマへ、shadcn/ui の見た目を合わせる）
-- [ ] 画面遷移の骨組み（ホーム、各ラボ、記録、設定）
-- [ ] PWA の設定（オフライン対応、更新の通知）
+- [x] 画面遷移の骨組み（ホーム、各ラボ、記録、設定）
+- [x] PWA の設定（オフライン対応、更新の通知）
 - [ ] Cloudflare Pages と連携し、PR ごとのプレビューを確認する
-- [ ] GitHub Actions で lint とテストを実行する
+- [x] GitHub Actions で lint とテストを実行する
 
 ### フェーズ 1：計算エンジン（domain）
 - [ ] 丸め処理
