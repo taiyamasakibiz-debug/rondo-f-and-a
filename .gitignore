@@ -25,3 +25,6 @@ dist-ssr
 
 # vite-plugin-pwa の開発用出力
 dev-dist
+
+# Wrangler のローカル作業用
+.wrangler

@@ -1,4 +1,4 @@
-# Cloudflare Pages 用。Service Worker と manifest は常に最新を取りに行く
+# Cloudflare Workers（静的アセット）用。Service Worker と manifest は常に最新を取りに行く
 /sw.js
   Cache-Control: no-cache
 /manifest.webmanifest

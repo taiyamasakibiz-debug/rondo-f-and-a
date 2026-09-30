@@ -255,7 +255,7 @@ type ProblemTemplate = {
 | テスト | Vitest（＋ Testing Library） | 計算エンジンはテスト必須 |
 | PWA | vite-plugin-pwa | 新しい版が出たら更新を知らせる |
 | コード品質 | oxlint + Prettier | oxlint は Vite の標準テンプレートに入っている高速なリンター |
-| デプロイ | Cloudflare Pages | main へ push で本番、PR ごとにプレビュー URL |
+| デプロイ | Cloudflare Workers（静的アセット） | main へ push で本番、ほかのブランチはプレビュー URL。設定は `wrangler.jsonc`。Pages は Cloudflare が旧方式扱いにしているため Workers を選んだ |
 
 ### 数値の扱い
 - 金額は**整数（円）**で持つ。表示するときに千円や百万円に換算する
@@ -317,7 +317,7 @@ domain はどこにも依存しない
 
 ## 10. ロードマップ（やることリスト）
 
-各フェーズの終わりに Cloudflare Pages のプレビューで動作を確認する。
+各フェーズの終わりに Cloudflare Workers のプレビュー URL で動作を確認する。
 
 ### フェーズ 0：土台づくり
 - [x] v1 を `v1-legacy` タグで保存する
@@ -327,7 +327,7 @@ domain はどこにも依存しない
 - [ ] Claude Design のデザインシステムを取り込む（トークンを Tailwind のテーマへ、shadcn/ui の見た目を合わせる）
 - [x] 画面遷移の骨組み（ホーム、各ラボ、記録、設定）
 - [x] PWA の設定（オフライン対応、更新の通知）
-- [ ] Cloudflare Pages と連携し、PR ごとのプレビューを確認する
+- [ ] Cloudflare Workers と連携し、ブランチごとのプレビューを確認する
 - [x] GitHub Actions で lint とテストを実行する
 
 ### フェーズ 1：計算エンジン（domain）
