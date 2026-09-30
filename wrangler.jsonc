@@ -1,7 +1,7 @@
 // Cloudflare Workers の設定。静的ファイル（Vite のビルド結果）だけを配信する
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "luminous-insight",
+  "name": "luminous-insights",
   "compatibility_date": "2026-09-30",
   "assets": {
     "directory": "./dist/",
