@@ -37,13 +37,3 @@ export const DEFAULT_SETTINGS: Settings = {
   dayStartHour: 4,
   updatedAt: new Date(0).toISOString(),
 }
-
-/** 書き出し・読み込みの形式 */
-export const exportSchema = z.object({
-  app: z.literal('luminous-insight'),
-  version: z.literal(1),
-  exportedAt: z.iso.datetime({ offset: true }),
-  attempts: z.array(attemptSchema),
-  settings: settingsSchema,
-})
-export type ExportData = z.infer<typeof exportSchema>

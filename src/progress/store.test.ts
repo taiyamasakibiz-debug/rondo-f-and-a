@@ -44,30 +44,21 @@ describe('IndexedDB の保存先', () => {
   })
 })
 
-describe('書き出しと読み込み', () => {
-  it('書き出したデータを読み込むと、同じ記録と設定に戻る', async () => {
+describe('置き換えと初期化', () => {
+  it('すべて置き換えられる（バックアップの読み込み用。形式の確認は backup.test.ts）', async () => {
     const source = createProgressStore(createMemoryRepository())
     await source.getState().load()
     await source.getState().recordAttempt(newAttempt)
-    await source.getState().updateSettings({ dayStartHour: 5 })
-    const json = JSON.stringify(source.getState().exportData())
 
-    const target = createProgressStore(createMemoryRepository())
+    const repository = createMemoryRepository()
+    const target = createProgressStore(repository)
     await target.getState().load()
-    expect(await target.getState().importData(json)).toEqual({ ok: true, attempts: 1 })
+    await target.getState().replaceAll({
+      attempts: source.getState().attempts,
+      settings: { ...DEFAULT_SETTINGS, dailyGoal: 9 },
+    })
     expect(target.getState().attempts).toEqual(source.getState().attempts)
-    expect(target.getState().settings).toEqual(source.getState().settings)
-  })
-
-  it('JSON でないデータや、形式の違うデータは読み込まない', async () => {
-    const store = createProgressStore(createMemoryRepository())
-    await store.getState().load()
-    await store.getState().recordAttempt(newAttempt)
-
-    expect((await store.getState().importData('not json')).ok).toBe(false)
-    expect((await store.getState().importData('{"app":"other"}')).ok).toBe(false)
-    // 失敗しても今のデータは残る
-    expect(store.getState().attempts).toHaveLength(1)
+    expect((await repository.load()).settings.dailyGoal).toBe(9)
   })
 
   it('初期化するとすべて消えて、設定も既定値に戻る', async () => {

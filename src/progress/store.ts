@@ -2,20 +2,13 @@ import { create } from 'zustand'
 import { type Repository, createIndexedDbRepository } from '@/data/repository'
 import { type SyncChannel, createBroadcastSync, createNoopSync } from '@/data/sync'
 import type { Topic } from '@/engine/types'
-import {
-  type Attempt,
-  DEFAULT_SETTINGS,
-  type ExportData,
-  type Settings,
-  exportSchema,
-} from './types'
+import type { ProgressData } from '@/data/repository'
+import { type Attempt, DEFAULT_SETTINGS, type Settings } from './types'
 
 export type NewAttempt = Pick<
   Attempt,
   'templateId' | 'seed' | 'earned' | 'total' | 'allCorrect' | 'steps' | 'durationMs'
 > & { topic: Topic }
-
-export type ImportResult = { ok: true; attempts: number } | { ok: false; message: string }
 
 type ProgressState = {
   status: 'loading' | 'ready' | 'error'
@@ -24,8 +17,8 @@ type ProgressState = {
   load(): Promise<void>
   recordAttempt(attempt: NewAttempt, now?: Date): Promise<Attempt>
   updateSettings(patch: Partial<Pick<Settings, 'dailyGoal' | 'dayStartHour'>>): Promise<void>
-  exportData(now?: Date): ExportData
-  importData(json: string): Promise<ImportResult>
+  /** すべて置き換える（バックアップの読み込み用。形式の確認は src/data/backup.ts で行う） */
+  replaceAll(data: ProgressData): Promise<void>
   resetAll(): Promise<void>
 }
 
@@ -116,46 +109,15 @@ export function createProgressStore(repository: Repository, sync: SyncChannel = 
         sync.notify('progress')
       },
 
-      exportData(now = new Date()) {
-        return {
-          app: 'luminous-insight',
-          version: 1,
-          exportedAt: now.toISOString(),
-          attempts: get().attempts,
-          settings: get().settings,
-        }
-      },
-
-      async importData(json) {
-        let raw: unknown
-        try {
-          raw = JSON.parse(json)
-        } catch {
-          return { ok: false, message: 'JSON として読み取れませんでした。' }
-        }
-        const parsed = exportSchema.safeParse(raw)
-        if (!parsed.success) {
-          return {
-            ok: false,
-            message: 'このアプリで書き出したデータではないか、形式が壊れています。',
-          }
-        }
-        const { attempts, settings } = parsed.data
+      async replaceAll({ attempts, settings }) {
         await enqueue(async () => {
           await repository.replaceAll({ attempts, settings })
           set({ attempts, settings })
         })
         sync.notify('progress')
-        return { ok: true, attempts: attempts.length }
       },
 
-      async resetAll() {
-        await enqueue(async () => {
-          await repository.replaceAll({ attempts: [], settings: DEFAULT_SETTINGS })
-          set({ attempts: [], settings: DEFAULT_SETTINGS })
-        })
-        sync.notify('progress')
-      },
+      resetAll: () => get().replaceAll({ attempts: [], settings: DEFAULT_SETTINGS }),
     }
   })
   return store

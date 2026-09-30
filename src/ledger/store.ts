@@ -30,6 +30,8 @@ type LedgerState = LedgerData & {
   /** 決算振替：収益・費用を利益剰余金へ振り替える */
   closeBooks(): Promise<Result>
   startWithStarterAccounts(): Promise<void>
+  /** すべて置き換える（バックアップの読み込み用） */
+  replaceAll(data: LedgerData): Promise<void>
   reset(): Promise<void>
 }
 
@@ -212,13 +214,15 @@ export function createLedgerStore(
         })
       },
 
-      async reset() {
+      async replaceAll({ accounts, entries }) {
         await enqueue(async () => {
-          await repository.replaceAll({ accounts: [], entries: [] })
-          set({ accounts: [], entries: [] })
+          await repository.replaceAll({ accounts, entries })
+          set({ accounts, entries })
         })
         sync.notify('ledger')
       },
+
+      reset: () => get().replaceAll({ accounts: [], entries: [] }),
     }
   })
 }
