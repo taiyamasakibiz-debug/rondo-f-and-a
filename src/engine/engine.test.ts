@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { generateProblem } from './generate'
 import { gradeProblem, gradeStep } from './grade'
-import { formatNumber, parseNumber } from './numbers'
+import { formatNumber, isNegative, parseNumber, toggleSign } from './numbers'
 import { createRandom } from './random'
 import type { ChoiceStep, JournalStep, NumericStep, ProblemTemplate } from './types'
 
@@ -26,6 +26,22 @@ describe('parseNumber', () => {
 
   it.each(['', 'abc', '1.2.3', '12a', '--5', '△'])('"%s" は読めない', (input) => {
     expect(parseNumber(input)).toBeNull()
+  })
+})
+
+describe('toggleSign', () => {
+  it('△ を付けたり外したりする', () => {
+    expect(toggleSign('500')).toBe('△500')
+    expect(toggleSign('△500')).toBe('500')
+    expect(toggleSign('-500')).toBe('500')
+    expect(toggleSign('')).toBe('△')
+    expect(parseNumber(toggleSign('1,200'))).toBe(-1200)
+  })
+
+  it('isNegative はマイナスの記号で始まる入力を見分ける', () => {
+    expect(isNegative('▲3')).toBe(true)
+    expect(isNegative(' △3')).toBe(true)
+    expect(isNegative('3')).toBe(false)
   })
 })
 

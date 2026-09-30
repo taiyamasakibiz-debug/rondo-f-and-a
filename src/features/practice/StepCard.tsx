@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { StepInput, StepResult } from '@/engine/grade'
 import type { ChoiceStep, NumericStep, Params, StepTemplate } from '@/engine/types'
+import { isNegative, toggleSign } from '@/engine/numbers'
 import { cn } from '@/lib/utils'
 import { JournalField } from './JournalField'
 import { Mark } from './Mark'
@@ -109,9 +110,29 @@ function NumericField({
           className="h-14 w-full min-w-0 bg-transparent px-1 text-[22px] font-bold tracking-text tabular-nums outline-none disabled:text-ink"
         />
         {step.unit && <span className="shrink-0 pb-1 text-label text-ink-muted">{step.unit}</span>}
+        {/* スマホの数字キーボードにはマイナスがないことが多いので、符号を切り替えるボタンを置く */}
+        <button
+          type="button"
+          disabled={graded}
+          onClick={() => {
+            const next = toggleSign(value)
+            onChange(next)
+            // 続けて数字を打てるよう、入力欄にカーソルを戻す（末尾に置く）
+            setTimeout(() => {
+              const input = document.getElementById(id) as HTMLInputElement | null
+              input?.focus()
+              input?.setSelectionRange(next.length, next.length)
+            })
+          }}
+          aria-pressed={isNegative(value)}
+          aria-label="プラスとマイナスを切り替える"
+          className="mb-2 flex size-9 shrink-0 items-center justify-center self-end rounded-pill border border-line text-label hover:border-ink disabled:opacity-40 aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-on-ink"
+        >
+          ±
+        </button>
       </div>
       <span id={`${id}-help`} className="text-caption text-ink-muted">
-        マイナスは「△」か「-」で入力できます
+        マイナスは「△」「-」を入力するか、± ボタンで切り替えられます
       </span>
     </div>
   )

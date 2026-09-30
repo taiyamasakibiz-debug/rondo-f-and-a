@@ -20,6 +20,22 @@ export function parseNumber(input: string): number | null {
   return value === 0 ? 0 : value
 }
 
+const NEGATIVE_PREFIX = /^\s*[△▲\-−－]/
+
+/** 入力がマイナスを表しているか（先頭が △ ▲ - のどれか） */
+export function isNegative(input: string): boolean {
+  return NEGATIVE_PREFIX.test(input)
+}
+
+/**
+ * 入力の先頭の「△」を付けたり外したりする。
+ * スマホの数字キーボードにはマイナスがないことが多いため、± ボタンから使う。
+ * 試験の答案と同じ表記に合わせて、付けるときは △ を使う。
+ */
+export function toggleSign(input: string): string {
+  return isNegative(input) ? input.replace(NEGATIVE_PREFIX, '') : `△${input.trimStart()}`
+}
+
 /**
  * 表示用の数値。桁区切りを付け、マイナスは試験と同じ「△」で表す。
  * digits を指定しなければ、小数は必要な桁だけ表示する（最大 6 桁）。
