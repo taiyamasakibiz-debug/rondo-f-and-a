@@ -22,6 +22,13 @@ export type Block =
       headers: readonly string[]
       rows: readonly (readonly string[])[]
     }
+  | {
+      /** 複数の系列を重ねたレーダーチャート。values は軸ごとに 0〜1 に正規化した値 */
+      type: 'radar'
+      caption?: string
+      axes: readonly string[]
+      series: readonly { label: string; values: readonly number[] }[]
+    }
 
 export type Unit = '千円' | '円' | '%' | '回' | '倍' | '年'
 

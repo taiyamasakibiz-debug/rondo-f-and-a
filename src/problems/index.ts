@@ -1,4 +1,5 @@
 import type { ProblemTemplate, Topic } from '@/engine/types'
+import { compareWithPeer } from './analysis/compare'
 import { efficiency, profitability, safety } from './analysis/indicators'
 import { adjustments, workingCapital } from './cf/indirect'
 import { breakEvenBasic } from './cvp/break-even-basic'
@@ -17,6 +18,7 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   profitability,
   safety,
   efficiency,
+  compareWithPeer,
   // 投資の意思決定
   newInvestmentNpv,
   replacementNpv,

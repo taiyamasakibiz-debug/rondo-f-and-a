@@ -80,6 +80,20 @@ describe.each(PROBLEM_TEMPLATES.map((template) => [template.id, template] as con
       }
     })
 
+    it('選択肢の正解がいつも同じにならない（覚えて答えられないように）', () => {
+      for (const step of template.steps) {
+        if (step.kind !== 'choice') continue
+        const answers = new Map<string, number>()
+        for (const { params } of problems) {
+          const key = step.answer(params)
+          answers.set(key, (answers.get(key) ?? 0) + 1)
+        }
+        expect(answers.size, `${step.id} ${JSON.stringify([...answers])}`).toBeGreaterThan(1)
+        // どの選択肢も 9 割を超えて正解にならない
+        for (const count of answers.values()) expect(count / problems.length).toBeLessThan(0.9)
+      }
+    })
+
     it('仕訳の正解は貸借が一致し、選べる科目だけを使う', () => {
       for (const { params } of problems) {
         for (const step of template.steps) {

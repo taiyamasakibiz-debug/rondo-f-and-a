@@ -1,4 +1,5 @@
 import type { Block } from '@/engine/types'
+import { RadarChart } from './RadarChart'
 
 /** 問題文・解説の部品を表示する */
 export function ProblemBlocks({ blocks }: { blocks: readonly Block[] }) {
@@ -9,6 +10,8 @@ export function ProblemBlocks({ blocks }: { blocks: readonly Block[] }) {
           <p key={i} className="text-body text-ink-body">
             {block.text}
           </p>
+        ) : block.type === 'radar' ? (
+          <RadarChart key={i} block={block} />
         ) : (
           <div key={i} className="overflow-x-auto">
             <table className="w-full min-w-[320px] border-collapse text-[15px] tracking-text">
