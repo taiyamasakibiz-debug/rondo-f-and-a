@@ -2,9 +2,11 @@ import type { ProblemTemplate, Topic } from '@/engine/types'
 import { compareWithPeer } from './analysis/compare'
 import { efficiency, profitability, safety } from './analysis/indicators'
 import { adjustments, workingCapital } from './cf/indirect'
+import { incomeTaxesPaid, investingAndFinancing } from './cf/more'
 import { breakEvenBasic } from './cvp/break-even-basic'
 import { highLow, leverage, targetProfitSales } from './cvp/more'
 import { allowance, creditSale, depreciation } from './journal/basic'
+import { workingCapitalAndResidual } from './npv/more'
 import { newInvestmentNpv, payback, replacementNpv } from './npv/npv'
 
 /** すべての問題テンプレート。追加したらここに登録する */
@@ -23,9 +25,12 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   newInvestmentNpv,
   replacementNpv,
   payback,
+  workingCapitalAndResidual,
   // キャッシュフロー計算書
   workingCapital,
   adjustments,
+  incomeTaxesPaid,
+  investingAndFinancing,
   // 仕訳
   creditSale,
   depreciation,
