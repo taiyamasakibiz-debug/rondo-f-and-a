@@ -1,5 +1,5 @@
 import { ACTIVITY_LABELS, type Activity } from '@/domain/cashflow/byActivity'
-import { AnimatedNumber } from './AnimatedNumber'
+import { AnimatedNumber } from '@/components/AnimatedNumber'
 import { Panel } from './Panel'
 import { useFreeStatements } from './useFreeStatements'
 

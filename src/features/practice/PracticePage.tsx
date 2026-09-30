@@ -2,6 +2,8 @@ import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type FormEvent, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { AnimatedNumber } from '@/components/AnimatedNumber'
+import { DigitalLines } from '@/components/DigitalLines'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { type Problem, generateProblem } from '@/engine/generate'
@@ -14,6 +16,7 @@ import { findTemplate, templatesForTopic } from '@/problems'
 import { dailyPracticePath } from '@/progress/daily'
 import { type LevelState, levelFromXp, topicProgress, xpForAttempt } from '@/progress/level'
 import { useProgressStore } from '@/progress/store'
+import { computeStreak } from '@/progress/streak'
 import { AnswerFeedback } from './AnswerFeedback'
 import { ProblemBlocks } from './ProblemBlocks'
 import { StepCard } from './StepCard'
@@ -53,7 +56,13 @@ function newProblem(topic: Topic): Problem | null {
   return generateProblem(createRandom(seed).pick(templates), seed)
 }
 
-type Reward = { xp: number; before: LevelState; after: LevelState }
+type Reward = {
+  xp: number
+  before: LevelState
+  after: LevelState
+  /** この 1 問で今日のノルマを達成したときの、ストリークの変化 */
+  streak?: { from: number; to: number }
+}
 
 function Practice({
   topic,
@@ -94,7 +103,9 @@ function Practice({
     setResult(graded)
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
 
-    const before = topicProgress(useProgressStore.getState().attempts, topic)
+    const store = useProgressStore.getState()
+    const before = topicProgress(store.attempts, topic)
+    const streakBefore = computeStreak(store.attempts, store.settings, new Date())
     const xp = xpForAttempt(graded)
     setReward({ xp, before, after: levelFromXp(before.xp + xp) })
     try {
@@ -108,6 +119,16 @@ function Practice({
         steps: graded.steps.map((step) => ({ stepId: step.stepId, correct: step.correct })),
         durationMs: Date.now() - startedAt,
       })
+      // この 1 問で今日のノルマを達成したら、ストリークが伸びた演出を出す
+      const after = useProgressStore.getState()
+      const streakAfter = computeStreak(after.attempts, after.settings, new Date())
+      if (!streakBefore.todayGoalMet && streakAfter.todayGoalMet) {
+        setReward((prev) =>
+          prev
+            ? { ...prev, streak: { from: streakBefore.current, to: streakAfter.current } }
+            : prev,
+        )
+      }
     } catch (error) {
       console.error('解答記録の保存に失敗しました', error)
       setSaveError(true)
@@ -241,6 +262,39 @@ function RewardRow({ reward }: { reward: Reward }) {
           LEVEL UP ・ Lv.{reward.before.level} → Lv.{reward.after.level}
         </motion.span>
       )}
+      {reward.streak && <StreakUp from={reward.streak.from} to={reward.streak.to} />}
+    </motion.div>
+  )
+}
+
+/** 今日のノルマを達成して、ストリークが伸びた瞬間の演出 */
+function StreakUp({ from, to }: { from: number; to: number }) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <motion.div
+      role="status"
+      initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.6 }}
+      className="relative flex w-full items-center gap-6 overflow-hidden rounded-lg bg-sky-wash px-6 py-5"
+    >
+      <DigitalLines
+        count={8}
+        seed={21}
+        className="pointer-events-none absolute inset-0 size-full"
+      />
+      <div className="relative flex flex-col gap-1">
+        <span className="text-[13px] font-bold tracking-caps text-ink-muted">STREAK</span>
+        <span className="font-ja text-[15px] font-bold tracking-ja">今日のノルマ達成</span>
+      </div>
+      <span className="relative ml-auto flex items-baseline gap-2">
+        <AnimatedNumber
+          value={to}
+          from={from}
+          className="text-[44px] leading-none font-bold tracking-tight tabular-nums"
+        />
+        <span className="font-ja text-[15px] text-ink-body">日</span>
+      </span>
     </motion.div>
   )
 }

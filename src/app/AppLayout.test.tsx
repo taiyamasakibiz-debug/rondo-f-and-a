@@ -211,3 +211,17 @@ describe('認定テスト', () => {
     expect(new Set(examAttempts.map((a) => a.exam!.id)).size).toBe(1)
   })
 })
+
+describe('ストリークの演出', () => {
+  it('この 1 問で今日のノルマを達成すると、ストリークが伸びた演出が出る', async () => {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().load()
+    await useProgressStore.getState().resetAll()
+    await useProgressStore.getState().updateSettings({ dailyGoal: 1 })
+
+    await renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+    expect(await screen.findByText('今日のノルマ達成')).toBeInTheDocument()
+    await useProgressStore.getState().resetAll()
+  })
+})

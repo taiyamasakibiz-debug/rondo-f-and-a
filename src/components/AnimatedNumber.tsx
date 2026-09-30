@@ -2,11 +2,22 @@ import { animate, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { formatNumber } from '@/engine/numbers'
 
-/** 値が変わると、前の値からなめらかに数え上げる（別のウィンドウでの記帳にも反応する） */
-export function AnimatedNumber({ value, className }: { value: number; className?: string }) {
+/**
+ * 値が変わると、前の値からなめらかに数え上げる（別のウィンドウでの記帳にも反応する）。
+ * from を渡すと、最初の表示でも from から value まで数え上げる。
+ */
+export function AnimatedNumber({
+  value,
+  from,
+  className,
+}: {
+  value: number
+  from?: number
+  className?: string
+}) {
   const reduceMotion = useReducedMotion()
-  const [shown, setShown] = useState(value)
-  const previous = useRef(value)
+  const [shown, setShown] = useState(from ?? value)
+  const previous = useRef(from ?? value)
 
   useEffect(() => {
     const from = previous.current

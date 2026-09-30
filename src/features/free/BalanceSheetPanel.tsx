@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
-import { AnimatedNumber } from './AnimatedNumber'
+import { AnimatedNumber } from '@/components/AnimatedNumber'
 import { Panel } from './Panel'
 import { useFreeStatements } from './useFreeStatements'
 
