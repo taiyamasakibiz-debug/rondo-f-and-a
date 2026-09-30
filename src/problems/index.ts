@@ -6,6 +6,7 @@ import { incomeTaxesPaid, investingAndFinancing } from './cf/more'
 import { breakEvenBasic } from './cvp/break-even-basic'
 import { highLow, leverage, targetProfitSales } from './cvp/more'
 import { allowance, creditSale, depreciation } from './journal/basic'
+import { fixedAssetSale, prepaidExpense } from './journal/more'
 import { workingCapitalAndResidual } from './npv/more'
 import { newInvestmentNpv, payback, replacementNpv } from './npv/npv'
 
@@ -35,6 +36,8 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   creditSale,
   depreciation,
   allowance,
+  fixedAssetSale,
+  prepaidExpense,
 ]
 
 export function templatesForTopic(topic: Topic): ProblemTemplate[] {

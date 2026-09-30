@@ -18,7 +18,7 @@ export const creditSale: ProblemTemplate = {
   },
   body: (p) => [
     text(
-      `商品を ${yenText(p.sales!)} で販売し、代金のうち ${yenText(cashOf(p))} は現金で受け取り、残額は掛けとした。この取引の仕訳を答えよ（三分法）。`,
+      `商品を ${yenText(p.sales!)}で販売し、代金のうち ${yenText(cashOf(p))} は現金で受け取り、残額は掛けとした。この取引の仕訳を答えよ（三分法）。`,
     ),
   ],
   steps: [
@@ -157,7 +157,7 @@ export const allowance: ProblemTemplate = {
   constraint: (p) => allowanceOf(p).provision > 0,
   body: (p) => [
     text(
-      `決算日の売掛金の残高は ${yenText(p.receivables!)} である。この期末残高に対して ${p.ratePercent}% の貸倒引当金を差額補充法で設定する。貸倒引当金の残高は ${yenText(p.balance!)} である。仕訳を答えよ。`,
+      `決算日の売掛金の残高は ${yenText(p.receivables!)}である。この期末残高に対して ${p.ratePercent}% の貸倒引当金を差額補充法で設定する。貸倒引当金の残高は ${yenText(p.balance!)}である。仕訳を答えよ。`,
     ),
   ],
   steps: [
