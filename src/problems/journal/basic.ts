@@ -18,7 +18,7 @@ export const creditSale: ProblemTemplate = {
   },
   body: (p) => [
     text(
-      `商品を ${yenText(p.sales!)}で販売し、代金のうち ${yenText(cashOf(p))} は現金で受け取り、残額は掛けとした。この取引の仕訳を答えよ（三分法）。`,
+      `商品を ${yenText(p.sales!)}で販売し、代金のうち ${yenText(cashOf(p))}は現金で受け取り、残額は掛けとした。この取引の仕訳を答えよ（三分法）。`,
     ),
   ],
   steps: [
