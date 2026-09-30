@@ -28,11 +28,12 @@ export function Panel({
           <span className="text-[24px] leading-[1.1] font-bold tracking-[-0.04em]">{en}</span>
           <span className="text-sub-ja text-[13px] text-ink-muted">{ja}</span>
         </h2>
+        {/* スマホではウィンドウを並べられないので出さない */}
         {!windowMode && (
           <button
             type="button"
             onClick={() => openPanelWindow(id)}
-            className="flex shrink-0 items-center gap-2 rounded-pill border border-line px-4 py-2 text-tag hover:border-ink"
+            className="hidden shrink-0 items-center gap-2 rounded-pill border border-line px-4 py-2 text-tag hover:border-ink md:flex"
           >
             別ウィンドウ
             <ArrowUpRight className="size-3.5" aria-hidden />

@@ -111,14 +111,14 @@ function BlockColumn({ blocks, scale }: { blocks: Block[]; scale: number }) {
               transition={transition}
               style={{ flexBasis: 0 }}
               className={cn(
-                'flex min-h-0 items-start justify-between overflow-hidden rounded-md px-3 text-[12px] font-bold tracking-[0.08em]',
+                'flex min-h-0 flex-wrap content-start justify-between gap-x-2 overflow-hidden rounded-md px-3 text-[12px] font-bold tracking-[0.08em]',
                 block.className,
                 share > 0.08 ? 'py-2' : 'py-0',
               )}
             >
               {share > 0.08 && (
                 <>
-                  <span className="font-ja">{block.label}</span>
+                  <span className="font-ja whitespace-nowrap">{block.label}</span>
                   <AnimatedNumber value={block.value} className="tabular-nums" />
                 </>
               )}
