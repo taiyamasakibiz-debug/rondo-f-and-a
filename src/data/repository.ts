@@ -19,6 +19,8 @@ export type ProgressData = {
 export type Repository = {
   load(): Promise<ProgressData>
   putAttempt(attempt: Attempt): Promise<void>
+  /** まとめて保存する（ほかの端末から届いた記録の取り込み用） */
+  putAttempts(attempts: readonly Attempt[]): Promise<void>
   putSettings(settings: Settings): Promise<void>
   /** すべて置き換える（読み込み・初期化用） */
   replaceAll(data: ProgressData): Promise<void>
@@ -47,6 +49,11 @@ export function createIndexedDbRepository(dbName = 'luminous-insight'): Reposito
       return { attempts, settings }
     },
     putAttempt: (attempt) => set(ATTEMPT_PREFIX + attempt.id, attempt, store),
+    putAttempts: (attempts) =>
+      setMany(
+        attempts.map((attempt): [string, Attempt] => [ATTEMPT_PREFIX + attempt.id, attempt]),
+        store,
+      ),
     putSettings: (settings) => set(SETTINGS_KEY, settings, store),
     async replaceAll({ attempts, settings }) {
       await clear(store)
@@ -71,6 +78,10 @@ export function createMemoryRepository(initial?: Partial<ProgressData>): Reposit
     load: async () => ({ attempts: [...data.attempts], settings: data.settings }),
     putAttempt: async (attempt) => {
       data = { ...data, attempts: [...data.attempts.filter((a) => a.id !== attempt.id), attempt] }
+    },
+    putAttempts: async (attempts) => {
+      const ids = new Set(attempts.map((attempt) => attempt.id))
+      data = { ...data, attempts: [...data.attempts.filter((a) => !ids.has(a.id)), ...attempts] }
     },
     putSettings: async (settings) => {
       data = { ...data, settings }

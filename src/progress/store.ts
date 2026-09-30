@@ -3,6 +3,7 @@ import { type Repository, createIndexedDbRepository } from '@/data/repository'
 import { type SyncChannel, createBroadcastSync, createNoopSync } from '@/data/sync'
 import type { Topic } from '@/engine/types'
 import type { ProgressData } from '@/data/repository'
+import { mergeAttempts, mergeSettings, newerAttempts } from '@/sync/merge'
 import { type Attempt, DEFAULT_SETTINGS, type Settings } from './types'
 
 export type NewAttempt = Pick<
@@ -17,9 +18,14 @@ type ProgressState = {
   load(): Promise<void>
   recordAttempt(attempt: NewAttempt, now?: Date): Promise<Attempt>
   updateSettings(patch: Partial<Pick<Settings, 'dailyGoal' | 'dayStartHour'>>): Promise<void>
-  /** すべて置き換える（バックアップの読み込み用。形式の確認は src/data/backup.ts で行う） */
-  replaceAll(data: ProgressData): Promise<void>
-  resetAll(): Promise<void>
+  /**
+   * すべて置き換える（バックアップの読み込み用。形式の確認は src/data/backup.ts で行う）。
+   * 置き換えで無くなる記録は消さずに削除の印（deletedAt）を付ける（ほかの端末に削除を伝えるため）
+   */
+  replaceAll(data: ProgressData, now?: Date): Promise<void>
+  resetAll(now?: Date): Promise<void>
+  /** ほかの端末から届いた記録と設定を取り込む。変わったものがあれば true */
+  mergeRemote(remote: { attempts: readonly Attempt[]; settings: Settings | null }): Promise<boolean>
 }
 
 /**
@@ -109,7 +115,15 @@ export function createProgressStore(repository: Repository, sync: SyncChannel = 
         sync.notify('progress')
       },
 
-      async replaceAll({ attempts, settings }) {
+      async replaceAll(data, now = new Date()) {
+        const timestamp = now.toISOString()
+        const keep = new Set(data.attempts.map((attempt) => attempt.id))
+        const tombstones = get()
+          .attempts.filter((attempt) => !keep.has(attempt.id) && !attempt.deletedAt)
+          .map((attempt) => ({ ...attempt, deletedAt: timestamp, updatedAt: timestamp }))
+        const attempts = mergeAttempts(data.attempts, tombstones)
+        // 置き換えた設定がほかの端末の設定より新しいものとして扱われるよう、更新日時を今にする
+        const settings = { ...data.settings, updatedAt: timestamp }
         await enqueue(async () => {
           await repository.replaceAll({ attempts, settings })
           set({ attempts, settings })
@@ -117,7 +131,24 @@ export function createProgressStore(repository: Repository, sync: SyncChannel = 
         sync.notify('progress')
       },
 
-      resetAll: () => get().replaceAll({ attempts: [], settings: DEFAULT_SETTINGS }),
+      resetAll: (now = new Date()) =>
+        get().replaceAll({ attempts: [], settings: DEFAULT_SETTINGS }, now),
+
+      async mergeRemote(remote) {
+        const changed = await enqueue(async () => {
+          const current = get()
+          const incoming = newerAttempts(current.attempts, remote.attempts)
+          const settings = mergeSettings(current.settings, remote.settings)
+          const settingsChanged = settings !== current.settings
+          if (incoming.length === 0 && !settingsChanged) return false
+          if (incoming.length > 0) await repository.putAttempts(incoming)
+          if (settingsChanged) await repository.putSettings(settings)
+          set({ attempts: mergeAttempts(get().attempts, incoming), settings })
+          return true
+        })
+        if (changed) sync.notify('progress')
+        return changed
+      },
     }
   })
   return store

@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { generateProblem } from '@/engine/generate'
 import { findTemplate } from '@/problems'
+import { liveAttempts } from '@/progress/types'
 import { routes } from './router'
 
 vi.mock('virtual:pwa-register/react', () => ({
@@ -83,7 +84,9 @@ describe('記録', () => {
     await renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
     expect(await screen.findByText(/\+\d+ XP/)).toBeInTheDocument()
-    await vi.waitFor(() => expect(useProgressStore.getState().attempts).toHaveLength(1))
+    await vi.waitFor(() =>
+      expect(liveAttempts(useProgressStore.getState().attempts)).toHaveLength(1),
+    )
 
     cleanup()
     await renderAt('/records')
@@ -118,7 +121,7 @@ describe('今日のデイリー', () => {
     }
 
     expect(await screen.findByRole('status')).toHaveTextContent('今日のデイリー達成')
-    expect(useProgressStore.getState().attempts).toHaveLength(3)
+    expect(liveAttempts(useProgressStore.getState().attempts)).toHaveLength(3)
   })
 })
 

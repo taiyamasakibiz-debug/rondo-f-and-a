@@ -1,8 +1,10 @@
-// Cloudflare Workers の設定。静的ファイル（Vite のビルド結果）だけを配信する
+// Cloudflare Workers の設定。静的ファイル（Vite のビルド結果）の配信と、端末間の同期（/api/sync）
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "luminous-insights",
   "compatibility_date": "2026-09-30",
+  // /api/* だけを処理する Worker（それ以外は静的ファイル）
+  "main": "worker/index.ts",
   // luminous-insights.<アカウント>.workers.dev で公開する
   "workers_dev": true,
   // main 以外のブランチは、ブランチごとのプレビュー URL で確認する
@@ -13,5 +15,13 @@
     "directory": "./dist/",
     // 見つからない URL は index.html を返し、画面遷移は React Router に任せる
     "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    // /api/* は静的ファイルより先に Worker で処理する
+    "run_worker_first": ["/api/*"],
   },
+  // 同期キーごとのデータ置き場（SQLite 版の Durable Objects。事前にリソースを作る必要はない）
+  "durable_objects": {
+    "bindings": [{ "name": "SYNC", "class_name": "SyncRoom" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SyncRoom"] }],
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createMemoryLedgerRepository } from '@/ledger/repository'
 import { createLedgerStore } from '@/ledger/store'
 import { createProgressStore } from '@/progress/store'
-import { DEFAULT_SETTINGS } from '@/progress/types'
+import { DEFAULT_SETTINGS, liveAttempts, settingsValues } from '@/progress/types'
 import { createBackup, parseBackup, restoreBackup } from './backup'
 import { createMemoryRepository } from './repository'
 
@@ -63,7 +63,9 @@ describe('バックアップ', () => {
     await restoreBackup(parsed.backup, target.targets)
 
     expect(target.progress.getState().attempts).toEqual(source.progress.getState().attempts)
-    expect(target.progress.getState().settings).toEqual(source.progress.getState().settings)
+    expect(settingsValues(target.progress.getState().settings)).toEqual(
+      settingsValues(source.progress.getState().settings),
+    )
     expect(target.ledger.getState().accounts).toEqual(source.ledger.getState().accounts)
     expect(target.ledger.getState().entries).toEqual(source.ledger.getState().entries)
   })
@@ -82,7 +84,7 @@ describe('バックアップ', () => {
     if (!parsed.ok) throw new Error(parsed.message)
     await restoreBackup(parsed.backup, target.targets)
 
-    expect(target.progress.getState().attempts).toEqual([])
+    expect(liveAttempts(target.progress.getState().attempts)).toEqual([])
     expect(target.ledger.getState().entries).toEqual(entriesBefore)
   })
 

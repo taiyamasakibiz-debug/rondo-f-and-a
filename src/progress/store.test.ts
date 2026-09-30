@@ -3,7 +3,7 @@ import { createStore, set } from 'idb-keyval'
 import { describe, expect, it } from 'vitest'
 import { createIndexedDbRepository, createMemoryRepository } from '@/data/repository'
 import { type NewAttempt, createProgressStore } from './store'
-import { DEFAULT_SETTINGS } from './types'
+import { DEFAULT_SETTINGS, liveAttempts, settingsValues } from './types'
 
 const newAttempt: NewAttempt = {
   templateId: 'cvp.break-even.basic',
@@ -69,8 +69,54 @@ describe('置き換えと初期化', () => {
     await store.getState().updateSettings({ dailyGoal: 10 })
     await store.getState().resetAll()
 
-    expect(store.getState().attempts).toEqual([])
-    expect(store.getState().settings).toEqual(DEFAULT_SETTINGS)
-    expect(await repository.load()).toEqual({ attempts: [], settings: DEFAULT_SETTINGS })
+    expect(liveAttempts(store.getState().attempts)).toEqual([])
+    expect(settingsValues(store.getState().settings)).toEqual(settingsValues(DEFAULT_SETTINGS))
+    // 保存先にも、記録は削除の印つきで残り（ほかの端末に削除を伝えるため）、設定は既定値に戻る
+    const saved = await repository.load()
+    expect(liveAttempts(saved.attempts)).toEqual([])
+    expect(saved.attempts.every((attempt) => attempt.deletedAt)).toBe(true)
+    expect(settingsValues(saved.settings)).toEqual(settingsValues(DEFAULT_SETTINGS))
+  })
+})
+
+describe('ほかの端末からの取り込み（mergeRemote）', () => {
+  it('手元にない記録と、新しい設定を取り込む。何も変わらなければ false', async () => {
+    const repository = createMemoryRepository()
+    const store = createProgressStore(repository)
+    await store.getState().load()
+    const mine = await store.getState().recordAttempt(newAttempt)
+    const theirs = { ...mine, id: 'from-phone', seed: 999 }
+    const newerSettings = {
+      ...DEFAULT_SETTINGS,
+      dailyGoal: 8,
+      updatedAt: '2999-01-01T00:00:00.000Z',
+    }
+
+    expect(
+      await store.getState().mergeRemote({ attempts: [mine, theirs], settings: newerSettings }),
+    ).toBe(true)
+    expect(
+      store
+        .getState()
+        .attempts.map((a) => a.id)
+        .sort(),
+    ).toEqual([mine.id, 'from-phone'].sort())
+    expect(store.getState().settings.dailyGoal).toBe(8)
+    expect((await repository.load()).attempts).toHaveLength(2)
+
+    expect(await store.getState().mergeRemote({ attempts: [theirs], settings: null })).toBe(false)
+  })
+
+  it('ほかの端末で消した記録は、手元でも消える', async () => {
+    const store = createProgressStore(createMemoryRepository())
+    await store.getState().load()
+    const mine = await store.getState().recordAttempt(newAttempt)
+    const deleted = {
+      ...mine,
+      deletedAt: '2999-01-01T00:00:00.000Z',
+      updatedAt: '2999-01-01T00:00:00.000Z',
+    }
+    await store.getState().mergeRemote({ attempts: [deleted], settings: null })
+    expect(liveAttempts(store.getState().attempts)).toEqual([])
   })
 })

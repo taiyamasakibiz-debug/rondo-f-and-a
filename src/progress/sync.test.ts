@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { type Repository, createMemoryRepository } from '@/data/repository'
 import { createBroadcastSync, createMemorySyncHub } from '@/data/sync'
 import { type NewAttempt, createProgressStore } from './store'
-import { DEFAULT_SETTINGS } from './types'
+import { DEFAULT_SETTINGS, liveAttempts, settingsValues } from './types'
 
 const newAttempt: NewAttempt = {
   templateId: 'cvp.break-even.basic',
@@ -41,8 +41,8 @@ describe('複数ウィンドウの同期', () => {
     await vi.waitFor(() => expect(b.getState().attempts).toHaveLength(1))
     await b.getState().resetAll()
     await vi.waitFor(() => {
-      expect(a.getState().attempts).toEqual([])
-      expect(a.getState().settings).toEqual(DEFAULT_SETTINGS)
+      expect(liveAttempts(a.getState().attempts)).toEqual([])
+      expect(settingsValues(a.getState().settings)).toEqual(settingsValues(DEFAULT_SETTINGS))
     })
   })
 

@@ -47,3 +47,13 @@ export const DEFAULT_SETTINGS: Settings = {
   dayStartHour: 4,
   updatedAt: new Date(0).toISOString(),
 }
+
+/** 削除の印（deletedAt）がない記録だけ */
+export function liveAttempts(attempts: readonly Attempt[]): Attempt[] {
+  return attempts.filter((attempt) => !attempt.deletedAt)
+}
+
+/** 更新日時を除いた設定（テストや比較用） */
+export function settingsValues({ dailyGoal, dayStartHour }: Settings) {
+  return { dailyGoal, dayStartHour }
+}

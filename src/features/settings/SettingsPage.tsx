@@ -20,6 +20,7 @@ import {
 } from '@/data/backup'
 import { useLedgerStore } from '@/ledger/store'
 import { useProgressStore } from '@/progress/store'
+import { SyncPanel } from './SyncPanel'
 
 const GOAL_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => hour)
@@ -30,6 +31,9 @@ export function SettingsPage() {
       <PageHeader title="Settings" subtitle="設定" />
       <div className="flex flex-col gap-16">
         <DailySection />
+        <Section en="Sync" ja="端末間の同期">
+          <SyncPanel />
+        </Section>
         <DataSection />
       </div>
     </>
@@ -119,7 +123,9 @@ type Pending = { backup: Backup; fileName: string } | null
 
 function DataSection() {
   const status = useProgressStore((state) => state.status)
-  const attemptCount = useProgressStore((state) => state.attempts.length)
+  const attemptCount = useProgressStore(
+    (state) => state.attempts.filter((attempt) => !attempt.deletedAt).length,
+  )
   const ledgerStatus = useLedgerStore((state) => state.status)
   // 書き出し・読み込みは、解答記録とフリーモードの両方を読み込み終えてから
   const ready = status === 'ready' && ledgerStatus === 'ready'
@@ -144,7 +150,7 @@ function DataSection() {
     link.click()
     URL.revokeObjectURL(url)
     setMessage(
-      `解答記録 ${data.attempts.length} 件と、フリーモードの仕訳 ${data.ledger.entries.length} 件を書き出しました。`,
+      `解答記録 ${data.attempts.filter((a) => !a.deletedAt).length} 件と、フリーモードの仕訳 ${data.ledger.entries.length} 件を書き出しました。`,
     )
   }
 
@@ -187,7 +193,7 @@ function DataSection() {
     <Section en="Data" ja="データ">
       <p className="text-body-sm text-ink-body">
         解答記録（{attemptCount}{' '}
-        件）・設定・フリーモードの科目と仕訳は、この端末のブラウザの中だけに保存されています。別の端末に移すときや、バックアップを取るときは書き出してください。
+        件）・設定・フリーモードの科目と仕訳は、この端末のブラウザの中に保存されています（同期している端末では、解答記録と設定はサーバーにも保存されます）。バックアップを取るときは書き出してください。
       </p>
       <div className="flex flex-wrap gap-3">
         <Button type="button" onClick={handleExport} disabled={!ready}>
