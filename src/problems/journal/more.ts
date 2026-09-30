@@ -214,3 +214,98 @@ export const prepaidExpense: ProblemTemplate = {
     ]
   },
 }
+
+// ---------------------------------------------------------------------------
+// 貸倒れ（前期の売掛金）
+
+function writeOffOf(p: Params) {
+  const amount = p.amountUnit! * 10_000
+  const allowance = p.allowanceUnit! * 10_000
+  return {
+    amount,
+    allowance,
+    covered: Math.min(amount, allowance),
+    loss: Math.max(0, amount - allowance),
+  }
+}
+
+function writeOffEntry(p: Params): JournalAnswer {
+  const { amount, covered, loss } = writeOffOf(p)
+  return {
+    debits: [
+      { accountId: 'allowance', amount: covered },
+      ...(loss > 0 ? [{ accountId: 'badDebt', amount: loss }] : []),
+    ],
+    credits: [{ accountId: 'receivable', amount }],
+  }
+}
+
+export const badDebtWriteOff: ProblemTemplate = {
+  id: 'journal.bad-debt-write-off',
+  topic: 'journal',
+  title: '売掛金の貸倒れ',
+  difficulty: 2,
+  source: { kind: 'original', publishable: true },
+  params: {
+    amountUnit: { kind: 'int', min: 5, max: 60 },
+    allowanceUnit: { kind: 'int', min: 5, max: 60 },
+  },
+  // 同じ額だと、足りる場合と足りない場合の区別がなくなる
+  constraint: (p) => p.amountUnit !== p.allowanceUnit,
+  body: (p) => {
+    const { amount, allowance } = writeOffOf(p)
+    return [
+      text(
+        `得意先が倒産し、前期に発生した売掛金 ${yenText(amount)}が回収できなくなった（貸倒れ）。貸倒引当金の残高は ${yenText(allowance)}である。この取引の仕訳を答えよ。`,
+      ),
+    ]
+  },
+  steps: [
+    {
+      kind: 'journal',
+      id: 'entry',
+      prompt: '仕訳',
+      points: 2,
+      accounts: [
+        { id: 'allowance', name: '貸倒引当金' },
+        { id: 'badDebt', name: '貸倒損失' },
+        { id: 'provision', name: '貸倒引当金繰入' },
+        { id: 'receivable', name: '売掛金' },
+      ],
+      answer: writeOffEntry,
+      commonMistakes: [
+        {
+          answer: (p) => ({
+            debits: [{ accountId: 'badDebt', amount: writeOffOf(p).amount }],
+            credits: [{ accountId: 'receivable', amount: writeOffOf(p).amount }],
+          }),
+          hint: '前期の売掛金の貸倒れは、まず貸倒引当金を取り崩す。足りない分だけが貸倒損失。',
+        },
+        {
+          // 引当金で足りる場合は、これが正解なので誤答にしない
+          answer: (p) =>
+            writeOffOf(p).loss > 0
+              ? {
+                  debits: [{ accountId: 'allowance', amount: writeOffOf(p).amount }],
+                  credits: [{ accountId: 'receivable', amount: writeOffOf(p).amount }],
+                }
+              : null,
+          hint: '取り崩せるのは引当金の残高まで。超えた分は貸倒損失にする。',
+        },
+      ],
+    },
+  ],
+  explanation: (p) => {
+    const { amount, allowance, covered, loss } = writeOffOf(p)
+    return [
+      text(
+        loss > 0
+          ? `貸倒れ ${yen(amount)} 円のうち、引当金の残高 ${yen(allowance)} 円までは貸倒引当金を取り崩し、足りない ${yen(loss)} 円は貸倒損失（費用）にする。`
+          : `貸倒れ ${yen(amount)} 円は、引当金の残高 ${yen(allowance)} 円の範囲内なので、全額を貸倒引当金の取り崩しでまかなう。`,
+      ),
+      text(
+        `（借方）貸倒引当金 ${yen(covered)}${loss > 0 ? `、貸倒損失 ${yen(loss)}` : ''} ／（貸方）売掛金 ${yen(amount)}`,
+      ),
+    ]
+  },
+}

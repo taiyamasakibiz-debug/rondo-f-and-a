@@ -12,12 +12,16 @@ export function text(value: string): Block {
   return { type: 'text', text: value }
 }
 
-/** 「項目・金額」の 2 列の表 */
-export function amountTable(caption: string, rows: readonly [string, number][]): Block {
+/** 「項目・金額」の 2 列の表。金額以外（数量など）も並ぶときは valueHeader を変える */
+export function amountTable(
+  caption: string,
+  rows: readonly [string, number][],
+  valueHeader = '金額',
+): Block {
   return {
     type: 'table',
     caption,
-    headers: ['項目', '金額'],
+    headers: ['項目', valueHeader],
     rows: rows.map(([label, value]) => [label, yen(value)]),
   }
 }

@@ -119,8 +119,10 @@ describe.each(PROBLEM_TEMPLATES.map((template) => [template.id, template] as con
             expect(Number.isInteger(line.amount) && line.amount > 0, show(params)).toBe(true)
           }
           for (const mistake of step.commonMistakes ?? []) {
+            const wrong = mistake.answer(params)
+            if (wrong === null) continue
             expect(
-              sameJournal(mistake.answer(params), step.answer(params)),
+              sameJournal(wrong, step.answer(params)),
               `${step.id}「${mistake.hint}」${show(params)}`,
             ).toBe(false)
           }

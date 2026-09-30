@@ -30,7 +30,7 @@ export type Block =
       series: readonly { label: string; values: readonly number[] }[]
     }
 
-export type Unit = '千円' | '円' | '%' | '回' | '倍' | '年'
+export type Unit = '千円' | '円' | '%' | '回' | '倍' | '年' | '日' | '個'
 
 type StepBase = {
   id: string
@@ -67,8 +67,8 @@ export type JournalStep = StepBase & {
   /** 選べる勘定科目 */
   accounts: readonly { id: string; name: string }[]
   answer: (p: Params) => JournalAnswer
-  /** よくある誤答。ユーザーの仕訳が一致したら hint を出す */
-  commonMistakes?: readonly { answer: (p: Params) => JournalAnswer; hint: string }[]
+  /** よくある誤答。ユーザーの仕訳が一致したら hint を出す。その数値では当てはまらない誤答は null を返す */
+  commonMistakes?: readonly { answer: (p: Params) => JournalAnswer | null; hint: string }[]
 }
 
 /** 記述の採点ポイント。anyOf のどれかの語が入っていれば、そのポイントを満たす */

@@ -4,12 +4,12 @@ import type { Unit } from './types'
  * ユーザーが入力した数値を読み取る。読めなければ null。
  * - 全角数字・全角記号（NFKC で半角に）
  * - 桁区切りのカンマ、空白
- * - 末尾の単位（千円・円・%・回・倍・年）
+ * - 末尾の単位（千円・円・%・回・倍・年・日・個）
  * - マイナス：「-」のほか、試験で使う「△」「▲」
  */
 export function parseNumber(input: string): number | null {
   let text = input.normalize('NFKC').replace(/[\s,]/g, '')
-  text = text.replace(/(千円|円|%|回|倍|年)$/, '')
+  text = text.replace(/(千円|円|%|回|倍|年|日|個)$/, '')
   let sign = 1
   if (/^[△▲−-]/.test(text)) {
     sign = -1

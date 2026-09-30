@@ -135,7 +135,10 @@ function gradeJournal(step: JournalStep, params: Params, answer: JournalAnswer):
   if (sameJournal(answer, expected)) {
     return { ...base, correct: true, earned: base.points, invalidInput: false }
   }
-  const mistake = step.commonMistakes?.find((m) => sameJournal(answer, m.answer(params)))
+  const mistake = step.commonMistakes?.find((m) => {
+    const wrong = m.answer(params)
+    return wrong !== null && sameJournal(answer, wrong)
+  })
   return { ...base, correct: false, earned: 0, invalidInput: false, hint: mistake?.hint }
 }
 

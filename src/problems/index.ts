@@ -1,12 +1,14 @@
 import type { ProblemTemplate, Topic } from '@/engine/types'
 import { compareWithPeer } from './analysis/compare'
 import { efficiency, profitability, safety } from './analysis/indicators'
+import { receivableTurnoverDays } from './analysis/turnover-days'
 import { adjustments, workingCapital } from './cf/indirect'
 import { incomeTaxesPaid, investingAndFinancing } from './cf/more'
 import { breakEvenBasic } from './cvp/break-even-basic'
 import { highLow, leverage, targetProfitSales } from './cvp/more'
+import { priceCut } from './cvp/price-cut'
 import { allowance, creditSale, depreciation } from './journal/basic'
-import { fixedAssetSale, prepaidExpense } from './journal/more'
+import { badDebtWriteOff, fixedAssetSale, prepaidExpense } from './journal/more'
 import { workingCapitalAndResidual } from './npv/more'
 import { newInvestmentNpv, payback, replacementNpv } from './npv/npv'
 
@@ -17,11 +19,13 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   targetProfitSales,
   highLow,
   leverage,
+  priceCut,
   // 経営分析
   profitability,
   safety,
   efficiency,
   compareWithPeer,
+  receivableTurnoverDays,
   // 投資の意思決定
   newInvestmentNpv,
   replacementNpv,
@@ -38,6 +42,7 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   allowance,
   fixedAssetSale,
   prepaidExpense,
+  badDebtWriteOff,
 ]
 
 export function templatesForTopic(topic: Topic): ProblemTemplate[] {
