@@ -14,33 +14,35 @@ vi.mock('virtual:pwa-register/react', () => ({
   }),
 }))
 
-function renderAt(path: string) {
+/** 画面は分割して読み込むので、最初の画面の読み込みが終わるのを待ってから表示する */
+async function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
+  await vi.waitFor(() => expect(router.state.initialized).toBe(true))
   render(<RouterProvider router={router} />)
 }
 
 describe('ルーティング', () => {
-  it('ホームにラボの一覧が出る', () => {
-    renderAt('/')
+  it('ホームにラボの一覧が出る', async () => {
+    await renderAt('/')
     expect(screen.getByRole('heading', { name: /Labs/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /CVP ラボ/ })).toBeInTheDocument()
   })
 
   it('ラボのカードから各ラボに移動できる', async () => {
-    renderAt('/')
+    await renderAt('/')
     await userEvent.click(screen.getByRole('link', { name: /投資ラボ/ }))
     expect(await screen.findByRole('heading', { name: /投資ラボ/ })).toBeInTheDocument()
   })
 
-  it('存在しないラボは「見つかりません」になる', () => {
-    renderAt('/labs/unknown')
+  it('存在しないラボは「見つかりません」になる', async () => {
+    await renderAt('/labs/unknown')
     expect(screen.getByRole('heading', { name: /ページが見つかりません/ })).toBeInTheDocument()
   })
 })
 
 describe('問題を解く', () => {
   it('CVP ラボで問題を解いて採点できる', async () => {
-    renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
+    await renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
     const inputs = screen.getAllByRole('textbox')
     expect(inputs).toHaveLength(3)
     await userEvent.type(inputs[0]!, '1')
@@ -57,7 +59,7 @@ describe('問題を解く', () => {
     const template = findTemplate('journal.credit-sale')!
     const { params } = generateProblem(template, 42)
     const cash = (params.sales! * params.cashPercent!) / 100
-    renderAt('/labs/journal/practice?template=journal.credit-sale&seed=42')
+    await renderAt('/labs/journal/practice?template=journal.credit-sale&seed=42')
 
     // 借方に 2 行（売掛金を先、現金を後）、貸方に 1 行
     await userEvent.click(screen.getByRole('button', { name: '借方に行を追加' }))
@@ -78,18 +80,18 @@ describe('記録', () => {
     const { useProgressStore } = await import('@/progress/store')
     await useProgressStore.getState().resetAll()
 
-    renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
+    await renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
     expect(await screen.findByText(/\+\d+ XP/)).toBeInTheDocument()
     await vi.waitFor(() => expect(useProgressStore.getState().attempts).toHaveLength(1))
 
     cleanup()
-    renderAt('/records')
+    await renderAt('/records')
     expect(screen.getByRole('link', { name: /損益分岐点売上高と安全余裕率/ })).toBeInTheDocument()
     expect(screen.getByText(/1 問/)).toBeInTheDocument()
 
     cleanup()
-    renderAt('/')
+    await renderAt('/')
     expect(screen.getByText('TODAY').nextElementSibling).toHaveTextContent('1問（ノルマ 3 問）')
   })
 })
@@ -99,7 +101,7 @@ describe('今日のデイリー', () => {
     const { useProgressStore } = await import('@/progress/store')
     await useProgressStore.getState().load()
     await useProgressStore.getState().resetAll()
-    renderAt('/')
+    await renderAt('/')
 
     const daily = screen.getByRole('heading', { level: 2, name: /Daily/ }).closest('section')!
     expect(within(daily).getAllByRole('listitem')).toHaveLength(3)
@@ -125,7 +127,7 @@ describe('フリーモード', () => {
     const { useLedgerStore } = await import('@/ledger/store')
     await useLedgerStore.getState().load()
     await useLedgerStore.getState().reset()
-    renderAt('/free')
+    await renderAt('/free')
 
     const journal = await screen.findByRole('region', { name: /Journal/ })
     await userEvent.click(within(journal).getByRole('button', { name: '標準の科目で始める' }))
@@ -150,7 +152,7 @@ describe('フリーモード', () => {
   })
 
   it('別ウィンドウ用のページは、ナビを省いてパネルだけを出す', async () => {
-    renderAt('/free/bs?window=1')
+    await renderAt('/free/bs?window=1')
     expect(await screen.findByRole('region', { name: /Balance Sheet/ })).toBeInTheDocument()
     expect(
       screen.queryByRole('navigation', { name: 'メインナビゲーション' }),
