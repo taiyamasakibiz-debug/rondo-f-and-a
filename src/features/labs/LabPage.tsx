@@ -11,8 +11,8 @@ export function LabPage() {
 
   return (
     <>
-      <PageHeader title={lab.name} description={lab.description} />
-      <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+      <PageHeader title={lab.nameEn} subtitle={lab.name} description={lab.description} />
+      <p className="rounded-xl border border-dashed border-line p-12 text-center text-body-sm text-ink-muted">
         準備中
       </p>
     </>

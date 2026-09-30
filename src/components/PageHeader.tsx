@@ -1,13 +1,22 @@
 type PageHeaderProps = {
+  /** 英字の見出し */
   title: string
+  /** 英字見出しの下に添える和文のサブ見出し */
+  subtitle?: string
   description?: string
 }
 
-export function PageHeader({ title, description }: PageHeaderProps) {
+// Tessera の見出しパターン：英字の大見出し + 和文のサブ見出し
+export function PageHeader({ title, subtitle, description }: PageHeaderProps) {
   return (
-    <div className="mb-6">
-      <h1 className="font-heading text-2xl font-semibold tracking-tight">{title}</h1>
-      {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+    <div className="mb-10 flex flex-col gap-2">
+      <h1 className="flex flex-col gap-2">
+        <span className="text-[36px] leading-[1.1] font-bold tracking-[-0.04em] md:text-section-en">
+          {title}
+        </span>
+        {subtitle && <span className="text-sub-ja text-ink-muted">{subtitle}</span>}
+      </h1>
+      {description && <p className="mt-2 text-body-sm text-ink-body">{description}</p>}
     </div>
   )
 }

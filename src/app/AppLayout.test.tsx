@@ -20,18 +20,18 @@ function renderAt(path: string) {
 describe('ルーティング', () => {
   it('ホームにラボの一覧が出る', () => {
     renderAt('/')
-    expect(screen.getByRole('heading', { name: '今日のデイリー' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Labs/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /CVP ラボ/ })).toBeInTheDocument()
   })
 
   it('ラボのカードから各ラボに移動できる', async () => {
     renderAt('/')
     await userEvent.click(screen.getByRole('link', { name: /投資ラボ/ }))
-    expect(await screen.findByRole('heading', { name: '投資ラボ' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /投資ラボ/ })).toBeInTheDocument()
   })
 
   it('存在しないラボは「見つかりません」になる', () => {
     renderAt('/labs/unknown')
-    expect(screen.getByRole('heading', { name: 'ページが見つかりません' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /ページが見つかりません/ })).toBeInTheDocument()
   })
 })

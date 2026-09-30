@@ -4,7 +4,8 @@ import { PageHeader } from '@/components/PageHeader'
 export function RecordsPage() {
   return (
     <PageHeader
-      title="記録"
+      title="Records"
+      subtitle="記録"
       description="レベル・認定・ストリーク・間違いノートがここに並びます。"
     />
   )

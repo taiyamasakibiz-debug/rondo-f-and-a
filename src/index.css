@@ -1,13 +1,172 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/geist';
+@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/noto-sans-jp';
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * デザインシステム「Tessera」のトークン（docs/design-system/tessera-tokens.json）
+ * 1. :root / .dark に Tessera の色をそのままの名前で定義する
+ * 2. shadcn/ui が使う意味づけの変数（--background など）を Tessera の色に割り当てる
+ * 3. @theme で Tailwind のユーティリティ（bg-fog、tracking-ja など）として使えるようにする
+ */
+
+:root {
+  /* Tessera: 面 */
+  --paper: #ffffff;
+  --haze: #f7f7f6;
+  --fog: #f2f2f0;
+  --sky-50: #eef3f5;
+  --sky-100: #dfeaef;
+  --sky-200: #cddfe7;
+  --sky-300: #9fb9c6;
+  --night: #121213;
+  --night-raised: #1e1e20;
+
+  /* Tessera: 線 */
+  --line-soft: #e4e4e2;
+  --line: #cccccc;
+  --night-line: rgb(255 255 255 / 0.5);
+  --line-digital: rgb(255 255 255 / 0.85);
+
+  /* Tessera: 文字 */
+  --ink: #121213;
+  --ink-body: #3d3d3f;
+  --ink-muted: #6b6b6b;
+  --stone: #828282;
+  --mist: #9fa9b3;
+  --on-ink: #ffffff;
+  --on-night: #ffffff;
+  --on-night-muted: #cccccc;
+
+  /* Tessera: アクセント（面積 1% 程度の点に使う） */
+  --ember: #eb805e;
+  --ember-text: #c2562f;
+  --ember-tint: #fbe6de;
+  --on-ember-tint: #9a3f1f;
+  --focus: #121213;
+
+  /* Tessera: グラデーション */
+  --sky-wash: radial-gradient(
+    90% 85% at 42% 92%,
+    #cddfe7 0%,
+    #dbe7ec 42%,
+    #eceff0 78%,
+    #f1f2f2 100%
+  );
+  --sky-wash-soft: linear-gradient(180deg, #ffffff 0%, #eef3f5 100%);
+
+  /* shadcn/ui の変数への割り当て */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--on-ink);
+  --secondary: var(--fog);
+  --secondary-foreground: var(--ink);
+  --muted: var(--fog);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--sky-50);
+  --accent-foreground: var(--ink);
+  /* Tessera に赤系の色はないため、shadcn の既定値のまま（正誤の色は今後デザインシステムに追加する） */
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--line-soft);
+  --input: var(--line);
+  --ring: var(--focus);
+  --chart-1: var(--ink);
+  --chart-2: var(--sky-300);
+  --chart-3: var(--ember);
+  --chart-4: var(--mist);
+  --chart-5: var(--stone);
+  --sidebar: var(--haze);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--on-ink);
+  --sidebar-accent: var(--fog);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line-soft);
+  --sidebar-ring: var(--focus);
+}
+
+/* ダークモードは後回し（docs/DESIGN.md §3.3）。Tessera の値だけ先に入れておく */
+.dark {
+  --paper: #121213;
+  --haze: #18181a;
+  --fog: #1e1e20;
+  --sky-50: #172024;
+  --sky-100: #1c2a30;
+  --sky-200: #24363e;
+  --sky-300: #5d7a88;
+  --line-soft: #2a2a2d;
+  --line: #3a3a3d;
+  --line-digital: rgb(205 223 231 / 0.4);
+  --ink: #ffffff;
+  --ink-body: #cccccc;
+  --ink-muted: #a3a3a6;
+  --on-ink: #121213;
+  --ember-text: #f0987a;
+  --ember-tint: #3a2219;
+  --on-ember-tint: #f5b39b;
+  --focus: #ffffff;
+  --sky-wash: radial-gradient(90% 85% at 42% 92%, #24363e 0%, #1c2a30 45%, #151c20 100%);
+  --sky-wash-soft: linear-gradient(180deg, #121213 0%, #172024 100%);
+  --destructive: oklch(0.704 0.191 22.216);
+}
+
 @theme inline {
+  /* 文字 */
+  --font-sans: 'Manrope Variable', 'Noto Sans JP Variable', 'Hiragino Kaku Gothic ProN', sans-serif;
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  --font-ja: 'Noto Sans JP Variable', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+
+  /* 字間：英字は詰め、和文は開く */
+  --tracking-tight: -0.05em;
+  --tracking-snug: -0.03em;
+  --tracking-text: 0.05em;
+  --tracking-ja: 0.12em;
+  --tracking-link: 0.2em;
+  --tracking-caps: 0.4em;
+
+  /* 角丸：ボタン・ナビ・タグは必ずピル型 */
+  --radius-sm: 4px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-xl: 36px;
+  --radius-pill: 999px;
+
+  /* Tessera の色 */
+  --color-paper: var(--paper);
+  --color-haze: var(--haze);
+  --color-fog: var(--fog);
+  --color-sky-50: var(--sky-50);
+  --color-sky-100: var(--sky-100);
+  --color-sky-200: var(--sky-200);
+  --color-sky-300: var(--sky-300);
+  --color-night: var(--night);
+  --color-night-raised: var(--night-raised);
+  --color-line-soft: var(--line-soft);
+  --color-line: var(--line);
+  --color-night-line: var(--night-line);
+  --color-ink: var(--ink);
+  --color-ink-body: var(--ink-body);
+  --color-ink-muted: var(--ink-muted);
+  --color-stone: var(--stone);
+  --color-mist: var(--mist);
+  --color-on-ink: var(--on-ink);
+  --color-on-night: var(--on-night);
+  --color-on-night-muted: var(--on-night-muted);
+  --color-ember: var(--ember);
+  --color-ember-text: var(--ember-text);
+  --color-ember-tint: var(--ember-tint);
+  --color-on-ember-tint: var(--on-ember-tint);
+  --color-focus: var(--focus);
+
+  /* shadcn/ui の色 */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,82 +198,85 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+/* Tessera の文字スタイル。サイズはアプリの画面に合わせて使う場所で調整する */
+@utility text-eyebrow {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+@utility text-section-en {
+  font-size: 44px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+@utility text-card-title {
+  font-size: 36px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+@utility text-h2-ja {
+  font-family: var(--font-ja);
+  font-size: 28px;
+  line-height: 1.6;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+@utility text-sub-ja {
+  font-family: var(--font-ja);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+@utility text-body {
+  font-size: 17px;
+  line-height: 2;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+@utility text-body-sm {
+  font-size: 14px;
+  line-height: 1.9;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+@utility text-label {
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+@utility text-link-caps {
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+@utility text-tag {
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+@utility text-caption {
+  font-size: 12px;
+  line-height: 1.7;
+  font-weight: 400;
+  letter-spacing: 0.05em;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+@utility bg-sky-wash {
+  background-image: var(--sky-wash);
+}
+@utility bg-sky-wash-soft {
+  background-image: var(--sky-wash-soft);
 }
 
 @layer base {
@@ -123,6 +285,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
   }
   button:not(:disabled),
   [role='button']:not(:disabled) {
@@ -130,5 +293,10 @@
   }
   html {
     @apply font-sans;
+  }
+  /* フォーカスリングは 2px の実線 + 2px のオフセット */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
 }

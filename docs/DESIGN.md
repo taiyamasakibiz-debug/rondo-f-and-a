@@ -72,7 +72,11 @@
 ラボの一覧：仕訳ラボ、分析ラボ、CF ラボ、CVP ラボ、投資ラボ（名前は仮）
 
 ### 3.3 ビジュアル
-- **UI とクリエイティブは、Claude Design で別途作成中のデザインシステムを適用する**
+- **UI とクリエイティブは、Claude Design で作ったデザインシステム「Tessera」を適用する**
+  - デザインシステム：https://claude.ai/artifact/TBAGQfUHszYg4KZXhgj9sj
+  - トークンの写し：[`docs/design-system/tessera-tokens.json`](design-system/tessera-tokens.json)。アプリでは `src/index.css` で CSS 変数と Tailwind のユーティリティに変換している
+  - フォント：Satoshi は npm で配布されていないため、Tessera の代替指定どおり **Manrope**（英字）と **Noto Sans JP**（和文）をアプリに同梱する（オフラインでも表示が崩れないように）
+  - **Tessera に足りないもの**：正解・不正解を表す色（赤系・緑系）。当面は shadcn/ui の既定の赤を使い、デザインシステム側に追加してから差し替える
   - 色、文字、余白、角丸、影、アイコン、コンポーネントの見た目はデザインシステムに従う
   - デザインシステムのトークンを Tailwind v4 のテーマ（CSS 変数）に取り込み、shadcn/ui の部品もそのトークンで見た目を合わせる
 - このドキュメントでは、デザインシステムに依存しない決まりごとだけを定める
@@ -324,7 +328,7 @@ domain はどこにも依存しない
 - [x] Vite + React + TypeScript で作り直し、v1 のファイルは片づける
 - [x] Tailwind v4、shadcn/ui、Motion を導入する
 - [x] oxlint、Prettier、Vitest を設定する
-- [ ] Claude Design のデザインシステムを取り込む（トークンを Tailwind のテーマへ、shadcn/ui の見た目を合わせる）
+- [x] Claude Design のデザインシステムを取り込む（トークンを Tailwind のテーマへ、shadcn/ui の見た目を合わせる）
 - [x] 画面遷移の骨組み（ホーム、各ラボ、記録、設定）
 - [x] PWA の設定（オフライン対応、更新の通知）
 - [ ] Cloudflare Workers と連携し、ブランチごとのプレビューを確認する
@@ -378,6 +382,7 @@ domain はどこにも依存しない
 ## 11. 未決事項
 - [ ] アプリ名（変更は決定済み。名前は最後に決める）
 - [ ] ラボの名前（仕訳ラボ、分析ラボ など）の確定
+- [ ] 正解・不正解の色を Tessera に追加する
 - [ ] 1日のノルマの初期値（3問でよいか）
 - [ ] 認定テストの問題数、制限時間、合格ライン、受けられるレベル
 - [ ] 復習スケジュールの手法（FSRS か、もっと簡単な方式か）

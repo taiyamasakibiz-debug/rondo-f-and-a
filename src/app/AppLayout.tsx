@@ -5,10 +5,10 @@ import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'ホーム', icon: House, end: true },
-  { to: '/labs', label: 'ラボ', icon: FlaskConical, end: false },
-  { to: '/records', label: '記録', icon: NotebookPen, end: false },
-  { to: '/settings', label: '設定', icon: Settings, end: false },
+  { to: '/', label: 'ホーム', labelEn: 'Home', icon: House, end: true },
+  { to: '/labs', label: 'ラボ', labelEn: 'Labs', icon: FlaskConical, end: false },
+  { to: '/records', label: '記録', labelEn: 'Records', icon: NotebookPen, end: false },
+  { to: '/settings', label: '設定', labelEn: 'Settings', icon: Settings, end: false },
 ] as const
 
 export function AppLayout() {
@@ -17,12 +17,13 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <NavLink to="/" className="font-heading text-base font-semibold tracking-tight">
-            Luminous Insight
+      {/* Tessera のナビ：半透明の白いピル */}
+      <header className="sticky top-0 z-40 px-4 pt-4 md:px-6 md:pt-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-pill border border-white bg-white/60 px-6 backdrop-blur-md md:h-16 md:pr-2 md:pl-8">
+          <NavLink to="/" className="text-[15px] font-extrabold tracking-[0.3em] uppercase">
+            Luminous
           </NavLink>
-          <nav aria-label="メインナビゲーション" className="hidden gap-1 md:flex">
+          <nav aria-label="メインナビゲーション" className="hidden items-center gap-1 md:flex">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -30,35 +31,35 @@ export function AppLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground',
-                    isActive && 'bg-muted font-medium text-foreground',
+                    'rounded-pill px-5 py-3 text-label text-ink-muted transition-colors hover:text-ink',
+                    isActive && 'bg-ink text-on-ink hover:text-on-ink',
                   )
                 }
               >
-                {item.label}
+                {item.labelEn}
               </NavLink>
             ))}
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-24 md:pb-10">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-28 md:px-6 md:pt-14 md:pb-24">
         <motion.div
           key={location.pathname}
-          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           <Outlet />
         </motion.div>
       </main>
 
-      {/* スマホは画面下のタブで移動する */}
+      {/* スマホは画面下のピル型タブで移動する */}
       <nav
         aria-label="メインナビゲーション（モバイル）"
-        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-40 md:hidden"
       >
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-4 rounded-pill border border-white bg-white/70 p-1.5 shadow-[0_8px_32px_rgb(18_18_19/0.08)] backdrop-blur-md">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
               <NavLink
@@ -66,8 +67,8 @@ export function AppLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'flex flex-col items-center gap-0.5 py-2 text-[11px] text-muted-foreground',
-                    isActive && 'font-medium text-foreground',
+                    'flex flex-col items-center gap-0.5 rounded-pill py-2 font-ja text-[11px] font-bold text-ink-muted transition-colors',
+                    isActive && 'bg-ink text-on-ink',
                   )
                 }
               >
