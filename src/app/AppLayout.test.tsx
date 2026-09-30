@@ -119,3 +119,41 @@ describe('今日のデイリー', () => {
     expect(useProgressStore.getState().attempts).toHaveLength(3)
   })
 })
+
+describe('フリーモード', () => {
+  it('標準の科目で始めて記帳すると、B/S に反映される。貸借が合わない仕訳は記帳しない', async () => {
+    const { useLedgerStore } = await import('@/ledger/store')
+    await useLedgerStore.getState().load()
+    await useLedgerStore.getState().reset()
+    renderAt('/free')
+
+    const journal = await screen.findByRole('region', { name: /Journal/ })
+    await userEvent.click(within(journal).getByRole('button', { name: '標準の科目で始める' }))
+    await userEvent.type(within(journal).getByLabelText('取引の説明'), '出資を受けた')
+    await userEvent.selectOptions(within(journal).getByLabelText('借方 1 行目の科目'), '現金預金')
+    await userEvent.type(within(journal).getByLabelText('借方 1 行目の金額'), '1000')
+    await userEvent.selectOptions(within(journal).getByLabelText('貸方 1 行目の科目'), '資本金')
+    await userEvent.type(within(journal).getByLabelText('貸方 1 行目の金額'), '900')
+    await userEvent.click(within(journal).getByRole('button', { name: '記帳する' }))
+    expect(await within(journal).findByRole('alert')).toHaveTextContent('一致していません')
+    expect(useLedgerStore.getState().entries).toHaveLength(0)
+
+    await userEvent.clear(within(journal).getByLabelText('貸方 1 行目の金額'))
+    await userEvent.type(within(journal).getByLabelText('貸方 1 行目の金額'), '1000')
+    await userEvent.click(within(journal).getByRole('button', { name: '記帳する' }))
+    expect(await within(journal).findByText('記帳しました。')).toBeInTheDocument()
+
+    const bs = screen.getByRole('region', { name: /Balance Sheet/ })
+    await vi.waitFor(() => expect(within(bs).getAllByLabelText('1,000').length).toBeGreaterThan(0))
+    // 記帳したら入力欄は空に戻る
+    expect(within(journal).getByLabelText('取引の説明')).toHaveValue('')
+  })
+
+  it('別ウィンドウ用のページは、ナビを省いてパネルだけを出す', async () => {
+    renderAt('/free/bs?window=1')
+    expect(await screen.findByRole('region', { name: /Balance Sheet/ })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'メインナビゲーション' }),
+    ).not.toBeInTheDocument()
+  })
+})

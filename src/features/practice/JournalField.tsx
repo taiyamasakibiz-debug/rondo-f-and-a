@@ -1,7 +1,6 @@
 import { useId, useState } from 'react'
-import type { StepResult } from '@/engine/grade'
 import { formatNumber, parseNumber } from '@/engine/numbers'
-import type { JournalAnswer, JournalLine, JournalStep } from '@/engine/types'
+import type { JournalAnswer, JournalLine } from '@/engine/types'
 import { cn } from '@/lib/utils'
 
 type Row = { key: number; accountId: string; amount: string }
@@ -24,18 +23,23 @@ function total(rows: readonly Row[]): number {
   return toLines(rows).reduce((sum, line) => sum + line.amount, 0)
 }
 
+type Accounts = readonly { id: string; name: string }[]
+
+/** 仕訳の入力（問題の解答と、フリーモードの記帳で使う） */
 export function JournalField({
   id,
-  step,
+  prompt,
+  accounts,
   onChange,
-  result,
+  disabled = false,
 }: {
   id: string
-  step: JournalStep
+  prompt: string
+  accounts: Accounts
   onChange: (answer: JournalAnswer) => void
-  result?: StepResult
+  disabled?: boolean
 }) {
-  const graded = result !== undefined
+  const graded = disabled
   const [rows, setRows] = useState<Record<Side, Row[]>>({
     debits: [emptyRow()],
     credits: [emptyRow()],
@@ -61,7 +65,7 @@ export function JournalField({
   return (
     <fieldset className="flex flex-col gap-5">
       <legend id={`${id}-label`} className="mb-3 font-ja text-base font-bold tracking-[0.08em]">
-        {step.prompt}
+        {prompt}
       </legend>
       <div className="grid gap-8 md:grid-cols-2">
         {(['debits', 'credits'] as const).map((side) => (
@@ -69,7 +73,7 @@ export function JournalField({
             key={side}
             side={side}
             rows={rows[side]}
-            accounts={step.accounts}
+            accounts={accounts}
             disabled={graded}
             onChangeRow={(key, patch) => updateRow(side, key, patch)}
             onAdd={() => addRow(side)}
@@ -101,7 +105,7 @@ function SideRows({
 }: {
   side: Side
   rows: readonly Row[]
-  accounts: JournalStep['accounts']
+  accounts: Accounts
   disabled: boolean
   onChangeRow: (key: number, patch: Partial<Row>) => void
   onAdd: () => void

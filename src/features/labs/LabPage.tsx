@@ -36,17 +36,24 @@ export function LabPage() {
               </li>
             ))}
           </ul>
-          <Button asChild size="lg" className="self-start pr-2">
-            <Link to={`/labs/${lab.id}/practice`}>
-              問題を解く
-              <span
-                data-icon="inline-end"
-                className="flex size-10 items-center justify-center rounded-pill bg-on-ink text-ink"
-              >
-                <ArrowRight className="size-4" aria-hidden />
-              </span>
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button asChild size="lg" className="pr-2">
+              <Link to={`/labs/${lab.id}/practice`}>
+                問題を解く
+                <span
+                  data-icon="inline-end"
+                  className="flex size-10 items-center justify-center rounded-pill bg-on-ink text-ink"
+                >
+                  <ArrowRight className="size-4" aria-hidden />
+                </span>
+              </Link>
+            </Button>
+            {lab.id === 'journal' && (
+              <Button asChild size="lg" variant="outline">
+                <Link to="/free">フリーモード</Link>
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </>

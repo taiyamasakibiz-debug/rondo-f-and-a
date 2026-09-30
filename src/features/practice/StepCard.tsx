@@ -51,9 +51,10 @@ export function StepCard({ index, step, params, input, onChange, result }: StepC
       {step.kind === 'journal' && (
         <JournalField
           id={inputId}
-          step={step}
+          prompt={step.prompt}
+          accounts={step.accounts}
           onChange={(answer) => onChange({ kind: 'journal', answer })}
-          result={result}
+          disabled={result !== undefined}
         />
       )}
 

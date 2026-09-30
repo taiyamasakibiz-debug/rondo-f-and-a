@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
 import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
 
@@ -13,6 +13,18 @@ const NAV_ITEMS = [
 export function AppLayout() {
   const location = useLocation()
   const reduceMotion = useReducedMotion()
+  const [searchParams] = useSearchParams()
+  // 別ウィンドウで開いたパネル（?window=1）は、ナビを省いて中身だけを見せる
+  const windowMode = searchParams.get('window') === '1'
+
+  if (windowMode) {
+    return (
+      <div className="min-h-dvh bg-background p-3 text-foreground md:p-4">
+        <Outlet />
+        <PwaUpdatePrompt />
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
