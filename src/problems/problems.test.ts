@@ -5,11 +5,11 @@
 import { describe, expect, it } from 'vitest'
 import { applyRounding, nearlyEqual } from '@/domain/rounding'
 import { generateProblem } from '@/engine/generate'
-import { expectedNumber } from '@/engine/grade'
+import { expectedNumber, sameJournal } from '@/engine/grade'
 import type { NumericStep, Params } from '@/engine/types'
 import { PROBLEM_TEMPLATES } from './index'
 
-const SEEDS = Array.from({ length: 300 }, (_, i) => i * 7919 + 1)
+const SEEDS = Array.from({ length: 1000 }, (_, i) => i * 7919 + 1)
 
 function roundMistake(step: NumericStep, value: number) {
   return step.rounding ? applyRounding(value, step.rounding) : value
@@ -89,6 +89,15 @@ describe.each(PROBLEM_TEMPLATES.map((template) => [template.id, template] as con
           expect(total(debits)).toBe(total(credits))
           const accountIds = new Set(step.accounts.map((account) => account.id))
           for (const line of [...debits, ...credits]) expect(accountIds).toContain(line.accountId)
+          for (const line of [...debits, ...credits]) {
+            expect(Number.isInteger(line.amount) && line.amount > 0, show(params)).toBe(true)
+          }
+          for (const mistake of step.commonMistakes ?? []) {
+            expect(
+              sameJournal(mistake.answer(params), step.answer(params)),
+              `${step.id}「${mistake.hint}」${show(params)}`,
+            ).toBe(false)
+          }
         }
       }
     })

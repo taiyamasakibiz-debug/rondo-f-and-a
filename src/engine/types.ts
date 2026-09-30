@@ -60,6 +60,8 @@ export type JournalStep = StepBase & {
   /** 選べる勘定科目 */
   accounts: readonly { id: string; name: string }[]
   answer: (p: Params) => JournalAnswer
+  /** よくある誤答。ユーザーの仕訳が一致したら hint を出す */
+  commonMistakes?: readonly { answer: (p: Params) => JournalAnswer; hint: string }[]
 }
 
 export type StepTemplate = NumericStep | ChoiceStep | JournalStep

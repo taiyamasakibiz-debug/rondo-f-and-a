@@ -2,6 +2,8 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
+import { generateProblem } from '@/engine/generate'
+import { findTemplate } from '@/problems'
 import { routes } from './router'
 
 vi.mock('virtual:pwa-register/react', () => ({
@@ -38,7 +40,7 @@ describe('ルーティング', () => {
 
 describe('問題を解く', () => {
   it('CVP ラボで問題を解いて採点できる', async () => {
-    renderAt('/labs/cvp/practice')
+    renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
     const inputs = screen.getAllByRole('textbox')
     expect(inputs).toHaveLength(3)
     await userEvent.type(inputs[0]!, '1')
@@ -51,9 +53,23 @@ describe('問題を解く', () => {
     expect(screen.getByRole('button', { name: /次の問題/ })).toBeInTheDocument()
   })
 
-  it('問題がまだないラボは準備中と表示する', () => {
-    renderAt('/labs/journal/practice')
-    expect(screen.getByText('このラボの問題は準備中です。')).toBeInTheDocument()
+  it('仕訳を入力して採点できる（行の順番は問わない）', async () => {
+    const template = findTemplate('journal.credit-sale')!
+    const { params } = generateProblem(template, 42)
+    const cash = (params.sales! * params.cashPercent!) / 100
+    renderAt('/labs/journal/practice?template=journal.credit-sale&seed=42')
+
+    // 借方に 2 行（売掛金を先、現金を後）、貸方に 1 行
+    await userEvent.click(screen.getByRole('button', { name: '借方に行を追加' }))
+    await userEvent.selectOptions(screen.getByLabelText('借方 1 行目の科目'), '売掛金')
+    await userEvent.type(screen.getByLabelText('借方 1 行目の金額'), String(params.sales! - cash))
+    await userEvent.selectOptions(screen.getByLabelText('借方 2 行目の科目'), '現金')
+    await userEvent.type(screen.getByLabelText('借方 2 行目の金額'), String(cash))
+    await userEvent.selectOptions(screen.getByLabelText('貸方 1 行目の科目'), '売上')
+    await userEvent.type(screen.getByLabelText('貸方 1 行目の金額'), String(params.sales!))
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('全問正解')
   })
 })
 
@@ -62,7 +78,7 @@ describe('記録', () => {
     const { useProgressStore } = await import('@/progress/store')
     await useProgressStore.getState().resetAll()
 
-    renderAt('/labs/cvp/practice')
+    renderAt('/labs/cvp/practice?template=cvp.break-even.basic&seed=1')
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
     expect(await screen.findByText(/\+\d+ XP/)).toBeInTheDocument()
     await vi.waitFor(() => expect(useProgressStore.getState().attempts).toHaveLength(1))

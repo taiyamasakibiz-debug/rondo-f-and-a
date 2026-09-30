@@ -127,10 +127,19 @@ function gradeJournal(step: JournalStep, params: Params, answer: JournalAnswer):
   if (answer.debits.length === 0 && answer.credits.length === 0) {
     return { ...base, correct: false, earned: 0, invalidInput: true }
   }
-  const correct =
-    sameTotals(totalsByAccount(answer.debits), totalsByAccount(expected.debits)) &&
-    sameTotals(totalsByAccount(answer.credits), totalsByAccount(expected.credits))
-  return { ...base, correct, earned: correct ? base.points : 0, invalidInput: false }
+  if (sameJournal(answer, expected)) {
+    return { ...base, correct: true, earned: base.points, invalidInput: false }
+  }
+  const mistake = step.commonMistakes?.find((m) => sameJournal(answer, m.answer(params)))
+  return { ...base, correct: false, earned: 0, invalidInput: false, hint: mistake?.hint }
+}
+
+/** 借方・貸方それぞれで、科目ごとの合計が一致するか */
+export function sameJournal(a: JournalAnswer, b: JournalAnswer): boolean {
+  return (
+    sameTotals(totalsByAccount(a.debits), totalsByAccount(b.debits)) &&
+    sameTotals(totalsByAccount(a.credits), totalsByAccount(b.credits))
+  )
 }
 
 function totalsByAccount(lines: JournalAnswer['debits']): Map<string, number> {

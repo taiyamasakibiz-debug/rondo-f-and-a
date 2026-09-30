@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { StepInput, StepResult } from '@/engine/grade'
 import type { ChoiceStep, NumericStep, Params, StepTemplate } from '@/engine/types'
 import { cn } from '@/lib/utils'
+import { JournalField } from './JournalField'
 import { Mark } from './Mark'
 
 type StepCardProps = {
@@ -48,9 +49,12 @@ export function StepCard({ index, step, params, input, onChange, result }: StepC
         />
       )}
       {step.kind === 'journal' && (
-        <p id={`${inputId}-label`} className="text-body-sm text-ink-muted">
-          {step.prompt}（仕訳の入力は仕訳ラボで対応予定）
-        </p>
+        <JournalField
+          id={inputId}
+          step={step}
+          onChange={(answer) => onChange({ kind: 'journal', answer })}
+          result={result}
+        />
       )}
 
       <AnimatePresence>{result && <StepResultRow result={result} />}</AnimatePresence>
