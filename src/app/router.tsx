@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router'
+import { DailyPage } from '@/features/daily/DailyPage'
 import { HomePage } from '@/features/home/HomePage'
 import { LabPage } from '@/features/labs/LabPage'
 import { LabsPage } from '@/features/labs/LabsPage'
@@ -14,6 +15,7 @@ export const routes = [
     element: <AppLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'daily', element: <DailyPage /> },
       { path: 'labs', element: <LabsPage /> },
       { path: 'labs/:labId', element: <LabPage /> },
       { path: 'labs/:labId/practice', element: <PracticePage /> },

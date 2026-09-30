@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -90,6 +90,32 @@ describe('記録', () => {
 
     cleanup()
     renderAt('/')
-    expect(screen.getByText('TODAY').nextElementSibling).toHaveTextContent('1 / 3')
+    expect(screen.getByText('TODAY').nextElementSibling).toHaveTextContent('1問（ノルマ 3 問）')
+  })
+})
+
+describe('今日のデイリー', () => {
+  it('ホームから始めて、3 問を順に解くと達成になる', async () => {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().load()
+    await useProgressStore.getState().resetAll()
+    renderAt('/')
+
+    const daily = screen.getByRole('heading', { level: 2, name: /Daily/ }).closest('section')!
+    expect(within(daily).getAllByRole('listitem')).toHaveLength(3)
+
+    await userEvent.click(screen.getByRole('link', { name: /はじめる/ }))
+    for (const [index, nextLabel] of [
+      [1, '次のデイリー'],
+      [2, '次のデイリー'],
+      [3, 'デイリーの結果へ'],
+    ] as const) {
+      expect(await screen.findByText(`DAILY ${index} / 3`)).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+      await userEvent.click(await screen.findByRole('button', { name: new RegExp(nextLabel) }))
+    }
+
+    expect(await screen.findByRole('status')).toHaveTextContent('今日のデイリー達成')
+    expect(useProgressStore.getState().attempts).toHaveLength(3)
   })
 })

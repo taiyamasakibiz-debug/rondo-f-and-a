@@ -1,15 +1,17 @@
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type FormEvent, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { type Problem, generateProblem } from '@/engine/generate'
 import { type ProblemResult, type StepInput, gradeProblem } from '@/engine/grade'
 import { createRandom, randomSeed } from '@/engine/random'
+import { useDaily } from '@/features/daily/useDaily'
 import { findLab } from '@/features/labs/labs'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { findTemplate, templatesForTopic } from '@/problems'
+import { dailyPracticePath } from '@/progress/daily'
 import { type LevelState, levelFromXp, topicProgress, xpForAttempt } from '@/progress/level'
 import { useProgressStore } from '@/progress/store'
 import { AnswerFeedback } from './AnswerFeedback'
@@ -25,7 +27,15 @@ export function PracticePage() {
   if (!lab) return <NotFoundPage />
   const retry = retryProblem(lab.id, searchParams)
   // ラボや問題が変わったら状態を作り直す
-  return <Practice key={`${lab.id}:${searchParams}`} topic={lab.id} initial={retry} />
+  const fromDaily = retry !== null && searchParams.get('from') === 'daily'
+  return (
+    <Practice
+      key={`${lab.id}:${searchParams}`}
+      topic={lab.id}
+      initial={retry}
+      fromDaily={fromDaily}
+    />
+  )
 }
 
 /** 間違いノートなどから ?template=…&seed=… で同じ問題を開く */
@@ -45,7 +55,15 @@ function newProblem(topic: Topic): Problem | null {
 
 type Reward = { xp: number; before: LevelState; after: LevelState }
 
-function Practice({ topic, initial }: { topic: Topic; initial: Problem | null }) {
+function Practice({
+  topic,
+  initial,
+  fromDaily,
+}: {
+  topic: Topic
+  initial: Problem | null
+  fromDaily: boolean
+}) {
   const lab = findLab(topic)!
   const reduceMotion = useReducedMotion()
   const recordAttempt = useProgressStore((state) => state.recordAttempt)
@@ -55,6 +73,8 @@ function Practice({ topic, initial }: { topic: Topic; initial: Problem | null })
   const [reward, setReward] = useState<Reward | null>(null)
   const [saveError, setSaveError] = useState(false)
   const [startedAt, setStartedAt] = useState(() => Date.now())
+  const navigate = useNavigate()
+  const daily = useDaily()
 
   if (!problem) {
     return (
@@ -93,7 +113,22 @@ function Practice({ topic, initial }: { topic: Topic; initial: Problem | null })
       setSaveError(true)
     }
   }
+  // デイリーから開いたときは、今日のデイリーの何問目か（デイリーにない問題なら -1）
+  const dailyIndex = fromDaily
+    ? daily.items.findIndex((item) => item.templateId === template.id && item.seed === problem.seed)
+    : -1
+  const inDaily = dailyIndex >= 0
+  // 今解いている問題を除いた、まだ解いていないデイリーの問題
+  const nextDaily = inDaily
+    ? daily.items.find((item, index) => index !== dailyIndex && !item.attempt)
+    : undefined
+
   const handleNext = () => {
+    if (inDaily) {
+      navigate(nextDaily ? dailyPracticePath(nextDaily) : '/daily')
+      window.scrollTo({ top: 0, behavior: 'auto' })
+      return
+    }
     setProblem(newProblem(topic))
     setInputs({})
     setResult(null)
@@ -105,6 +140,11 @@ function Practice({ topic, initial }: { topic: Topic; initial: Problem | null })
 
   return (
     <>
+      {inDaily && (
+        <p className="mb-3 text-[13px] font-bold tracking-caps text-ink-muted">
+          DAILY {dailyIndex + 1} / {daily.items.length}
+        </p>
+      )}
       <PageHeader title={lab.nameEn} subtitle={template.title} />
 
       <div className="flex flex-col gap-12">
@@ -164,7 +204,7 @@ function Practice({ topic, initial }: { topic: Topic; initial: Problem | null })
             </h2>
             <ProblemBlocks blocks={template.explanation(params)} />
             <Button type="button" size="lg" className="self-start pr-2" onClick={handleNext}>
-              次の問題
+              {inDaily ? (nextDaily ? '次のデイリー' : 'デイリーの結果へ') : '次の問題'}
               <ArrowDot />
             </Button>
           </motion.section>
