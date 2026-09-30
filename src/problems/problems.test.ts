@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyRounding, nearlyEqual } from '@/domain/rounding'
 import { generateProblem } from '@/engine/generate'
-import { expectedNumber, sameJournal } from '@/engine/grade'
+import { expectedNumber, gradeStep, sameJournal, writtenLength } from '@/engine/grade'
 import type { NumericStep, Params } from '@/engine/types'
 import { PROBLEM_TEMPLATES } from './index'
 
@@ -76,6 +76,18 @@ describe.each(PROBLEM_TEMPLATES.map((template) => [template.id, template] as con
           const keys = step.options(params).map((option) => option.key)
           expect(new Set(keys).size).toBe(keys.length)
           expect(keys).toContain(step.answer(params))
+        }
+      }
+    })
+
+    it('記述の模範解答は字数内に収まり、すべての観点を満たす', () => {
+      for (const { params } of problems) {
+        for (const step of template.steps) {
+          if (step.kind !== 'written') continue
+          const model = step.modelAnswer(params)
+          const result = gradeStep(step, params, { kind: 'written', text: model })
+          expect(writtenLength(model), `${step.id}「${model}」`).toBeLessThanOrEqual(step.maxLength)
+          expect(result.correct, `${step.id}「${model}」${result.hint ?? ''}`).toBe(true)
         }
       }
     })

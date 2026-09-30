@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { generateProblem } from './generate'
-import { gradeProblem, gradeStep } from './grade'
+import { gradeProblem, gradeStep, writtenLength } from './grade'
 import { formatNumber, isNegative, parseNumber, toggleSign } from './numbers'
 import { createRandom } from './random'
-import type { ChoiceStep, JournalStep, NumericStep, ProblemTemplate } from './types'
+import type { ChoiceStep, JournalStep, NumericStep, ProblemTemplate, WrittenStep } from './types'
 
 describe('parseNumber', () => {
   it.each([
@@ -242,5 +242,58 @@ describe('gradeProblem', () => {
     const problem = { template, seed: 0, params: { a: 1, b: 3 } }
     const result = gradeProblem(problem, { pick: { kind: 'choice', key: 'B' } })
     expect(result.steps[0]).toMatchObject({ correct: false, invalidInput: true })
+  })
+})
+
+describe('gradeStep（記述）', () => {
+  const writtenStep: WrittenStep = {
+    kind: 'written',
+    id: 'issue',
+    prompt: '課題を述べよ',
+    points: 3,
+    maxLength: 20,
+    keywords: () => [
+      { label: '安全性', anyOf: ['安全性'] },
+      { label: '自己資本', anyOf: ['自己資本', '純資産'] },
+      { label: '負債', anyOf: ['負債', '借入'] },
+    ],
+    modelAnswer: () => '借入が多く自己資本比率が低く安全性が劣る。',
+  }
+
+  it('満たした観点の割合で部分点を出し、足りない観点を知らせる', () => {
+    const result = gradeStep(
+      writtenStep,
+      {},
+      { kind: 'written', text: '純資産が少なく安全性が低い' },
+    )
+    expect(result).toMatchObject({ correct: false, earned: 2, points: 3 })
+    expect(result.hint).toContain('負債')
+  })
+
+  it('すべての観点を満たせば正解（全角・半角の違いは気にしない）', () => {
+    const result = gradeStep(
+      writtenStep,
+      {},
+      { kind: 'written', text: '借入に頼り自己資本が薄く安全性が低い' },
+    )
+    expect(result).toMatchObject({ correct: true, earned: 3 })
+  })
+
+  it('字数を超えたら 0 点、空欄は未回答', () => {
+    const long = gradeStep(
+      writtenStep,
+      {},
+      {
+        kind: 'written',
+        text: '借入に頼っており自己資本が薄いため長期的な安全性が同業他社より劣っている',
+      },
+    )
+    expect(long).toMatchObject({ correct: false, earned: 0 })
+    expect(long.hint).toContain('20字')
+    expect(gradeStep(writtenStep, {}, { kind: 'written', text: '  ' }).invalidInput).toBe(true)
+  })
+
+  it('字数は空白と改行を数えない', () => {
+    expect(writtenLength('あい う\nえ')).toBe(4)
   })
 })

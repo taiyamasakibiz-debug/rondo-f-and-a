@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import type { StepInput, StepResult } from '@/engine/grade'
-import type { ChoiceStep, NumericStep, Params, StepTemplate } from '@/engine/types'
+import { type StepInput, type StepResult, matchKeywords, writtenLength } from '@/engine/grade'
+import type { ChoiceStep, NumericStep, Params, StepTemplate, WrittenStep } from '@/engine/types'
 import { isNegative, toggleSign } from '@/engine/numbers'
 import { cn } from '@/lib/utils'
 import { JournalField } from './JournalField'
@@ -58,8 +58,29 @@ export function StepCard({ index, step, params, input, onChange, result }: StepC
           disabled={result !== undefined}
         />
       )}
+      {step.kind === 'written' && (
+        <WrittenField
+          id={inputId}
+          step={step}
+          value={input?.kind === 'written' ? input.text : ''}
+          onChange={(text) => onChange({ kind: 'written', text })}
+          disabled={result !== undefined}
+        />
+      )}
 
-      <AnimatePresence>{result && <StepResultRow result={result} />}</AnimatePresence>
+      <AnimatePresence>
+        {result &&
+          (step.kind === 'written' ? (
+            <WrittenResultRow
+              step={step}
+              params={params}
+              text={input?.kind === 'written' ? input.text : ''}
+              result={result}
+            />
+          ) : (
+            <StepResultRow result={result} />
+          ))}
+      </AnimatePresence>
     </section>
   )
 }
@@ -232,6 +253,116 @@ function StepResultRow({ result }: { result: StepResult }) {
           </span>
         )}
         {result.hint && <span className="text-body-sm text-ink-body">{result.hint}</span>}
+      </div>
+    </motion.div>
+  )
+}
+
+/** 記述の入力欄。字数（空白を除く）を数えて見せる */
+function WrittenField({
+  id,
+  step,
+  value,
+  onChange,
+  disabled,
+}: {
+  id: string
+  step: WrittenStep
+  value: string
+  onChange: (text: string) => void
+  disabled: boolean
+}) {
+  const length = writtenLength(value)
+  const over = length > step.maxLength
+  return (
+    <div className="flex flex-col gap-3">
+      <label
+        id={`${id}-label`}
+        htmlFor={id}
+        className="font-ja text-base font-bold tracking-[0.08em]"
+      >
+        {step.prompt}
+      </label>
+      <textarea
+        id={id}
+        value={value}
+        disabled={disabled}
+        rows={3}
+        onChange={(event) => onChange(event.target.value)}
+        aria-describedby={`${id}-count`}
+        className="min-h-28 w-full resize-y rounded-md border border-line bg-paper p-4 font-ja text-[16px] leading-[1.9] tracking-text focus:border-ember focus:outline-none disabled:text-ink"
+      />
+      <span
+        id={`${id}-count`}
+        aria-live="polite"
+        className={cn('self-end text-caption tabular-nums', over ? 'text-ink' : 'text-ink-muted')}
+      >
+        {length} / {step.maxLength} 字{over && '（字数を超えています）'}
+      </span>
+    </div>
+  )
+}
+
+/** 記述の採点結果：満たした観点と足りない観点、模範解答 */
+function WrittenResultRow({
+  step,
+  params,
+  text,
+  result,
+}: {
+  step: WrittenStep
+  params: Params
+  text: string
+  result: StepResult
+}) {
+  const reduceMotion = useReducedMotion()
+  const matches = matchKeywords(step, params, text)
+  return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        'flex items-start gap-4 rounded-md p-4',
+        result.correct ? 'bg-correct-50' : 'bg-incorrect-50',
+      )}
+    >
+      <Mark correct={result.correct} />
+      <div className="flex flex-col gap-3">
+        <span
+          className={cn(
+            'text-[13px] font-bold tracking-[0.1em]',
+            result.correct ? 'text-correct-text' : 'text-incorrect-text',
+          )}
+        >
+          {result.invalidInput
+            ? '未回答'
+            : `${Math.round(result.earned * 10) / 10} / ${result.points} 点（キーワードによる目安）`}
+        </span>
+        {result.hint && <span className="text-body-sm text-ink-body">{result.hint}</span>}
+        <ul className="flex flex-wrap gap-2" aria-label="採点の観点">
+          {matches.map((match) => (
+            <li
+              key={match.label}
+              className={cn(
+                'rounded-pill border px-3 py-1 text-[12px] font-bold tracking-[0.05em]',
+                match.matched
+                  ? 'border-correct-300 text-correct-text'
+                  : 'border-incorrect-300 text-incorrect-text',
+              )}
+            >
+              {match.matched ? '○' : '×'} {match.label}
+              <span className="sr-only">{match.matched ? '（満たしている）' : '（足りない）'}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] font-bold tracking-[0.1em]">模範解答</span>
+          <p className="text-body-sm text-ink-body">{result.expected}</p>
+        </div>
+        <span className="text-caption text-ink-muted">
+          表現の違いは自動では判定しきれないので、模範解答と見比べて確かめてください。
+        </span>
       </div>
     </motion.div>
   )

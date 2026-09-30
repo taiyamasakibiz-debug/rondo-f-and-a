@@ -8,6 +8,7 @@ import type {
   NumericStep,
   Params,
   StepTemplate,
+  WrittenStep,
 } from './types'
 
 /** ユーザーの答え */
@@ -15,6 +16,7 @@ export type StepInput =
   | { kind: 'numeric'; raw: string }
   | { kind: 'choice'; key: string | null }
   | { kind: 'journal'; answer: JournalAnswer }
+  | { kind: 'written'; text: string }
 
 export type StepResult = {
   stepId: string
@@ -49,6 +51,9 @@ export function gradeStep(step: StepTemplate, params: Params, input: StepInput):
     case 'journal':
       if (input.kind !== 'journal') throw mismatch(step, input)
       return gradeJournal(step, params, input.answer)
+    case 'written':
+      if (input.kind !== 'written') throw mismatch(step, input)
+      return gradeWritten(step, params, input.text)
   }
 }
 
@@ -173,6 +178,55 @@ function emptyInput(step: StepTemplate): StepInput {
       return { kind: 'choice', key: null }
     case 'journal':
       return { kind: 'journal', answer: { debits: [], credits: [] } }
+    case 'written':
+      return { kind: 'written', text: '' }
+  }
+}
+
+/** 記述の字数。空白と改行は数えない（答案用紙のマス目に合わせる） */
+export function writtenLength(text: string): number {
+  return [...text.replace(/\s/g, '')].length
+}
+
+/** キーワードごとの判定（画面で、どのポイントを満たしたかを見せるため） */
+export function matchKeywords(
+  step: WrittenStep,
+  params: Params,
+  text: string,
+): { label: string; matched: boolean }[] {
+  const normalized = text.normalize('NFKC')
+  return step.keywords(params).map((keyword) => ({
+    label: keyword.label,
+    matched: keyword.anyOf.some((word) => normalized.includes(word.normalize('NFKC'))),
+  }))
+}
+
+/**
+ * 記述の目安の採点：満たしたキーワードの割合で部分点。字数を超えたら 0 点。
+ * 表記ゆれや言い換えは拾いきれないので、模範解答と見比べて自分でも確かめる前提。
+ */
+function gradeWritten(step: WrittenStep, params: Params, text: string): StepResult {
+  const points = step.points ?? 1
+  const base = { stepId: step.id, points, expected: step.modelAnswer(params) }
+  if (writtenLength(text) === 0) return { ...base, correct: false, earned: 0, invalidInput: true }
+  if (writtenLength(text) > step.maxLength) {
+    return {
+      ...base,
+      correct: false,
+      earned: 0,
+      invalidInput: false,
+      hint: `字数（${step.maxLength}字）を超えています。`,
+    }
+  }
+  const matches = matchKeywords(step, params, text)
+  const matched = matches.filter((m) => m.matched).length
+  const missing = matches.filter((m) => !m.matched).map((m) => m.label)
+  return {
+    ...base,
+    correct: missing.length === 0,
+    earned: matches.length === 0 ? points : (points * matched) / matches.length,
+    invalidInput: false,
+    hint: missing.length > 0 ? `足りない観点：${missing.join('、')}` : undefined,
   }
 }
 

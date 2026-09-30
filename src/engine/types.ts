@@ -71,7 +71,22 @@ export type JournalStep = StepBase & {
   commonMistakes?: readonly { answer: (p: Params) => JournalAnswer; hint: string }[]
 }
 
-export type StepTemplate = NumericStep | ChoiceStep | JournalStep
+/** 記述の採点ポイント。anyOf のどれかの語が入っていれば、そのポイントを満たす */
+export type WrittenKeyword = { label: string; anyOf: readonly string[] }
+
+/**
+ * 記述（事例Ⅳの「〇〇字以内で述べよ」）。
+ * キーワードが入っているかで目安の部分点を出し、模範解答を見せる（自動採点は目安）。
+ */
+export type WrittenStep = StepBase & {
+  kind: 'written'
+  /** 字数の上限（超えると 0 点） */
+  maxLength: number
+  keywords: (p: Params) => readonly WrittenKeyword[]
+  modelAnswer: (p: Params) => string
+}
+
+export type StepTemplate = NumericStep | ChoiceStep | JournalStep | WrittenStep
 
 export type ProblemSource = {
   kind: 'original' | 'past-exam' | 'ai-generated'
