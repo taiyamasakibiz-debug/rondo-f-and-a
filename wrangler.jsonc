@@ -3,6 +3,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "luminous-insights",
   "compatibility_date": "2026-09-30",
+  // luminous-insights.<アカウント>.workers.dev で公開する
+  "workers_dev": true,
+  // main 以外のブランチは、ブランチごとのプレビュー URL で確認する
+  "preview_urls": true,
   "assets": {
     "directory": "./dist/",
     // 見つからない URL は index.html を返し、画面遷移は React Router に任せる
