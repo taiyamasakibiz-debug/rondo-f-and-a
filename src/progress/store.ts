@@ -7,7 +7,7 @@ import { type Attempt, DEFAULT_SETTINGS, type Settings } from './types'
 
 export type NewAttempt = Pick<
   Attempt,
-  'templateId' | 'seed' | 'earned' | 'total' | 'allCorrect' | 'steps' | 'durationMs'
+  'templateId' | 'seed' | 'earned' | 'total' | 'allCorrect' | 'steps' | 'durationMs' | 'exam'
 > & { topic: Topic }
 
 type ProgressState = {

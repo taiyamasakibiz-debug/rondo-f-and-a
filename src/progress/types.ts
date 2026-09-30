@@ -20,6 +20,16 @@ export const attemptSchema = z.object({
   updatedAt: z.iso.datetime({ offset: true }),
   /** 論理削除（将来の同期で、削除も伝えられるように） */
   deletedAt: z.iso.datetime({ offset: true }).optional(),
+  /** 認定テストで解いた問題なら、そのテストの情報（合否は src/progress/certification.ts で計算する） */
+  exam: z
+    .object({
+      id: z.string().min(1),
+      tier: z.enum(['bronze', 'silver', 'gold']),
+      /** テストの何問目か（0 から） */
+      index: z.number().int().nonnegative(),
+      startedAt: z.iso.datetime({ offset: true }),
+    })
+    .optional(),
 })
 export type Attempt = z.infer<typeof attemptSchema>
 

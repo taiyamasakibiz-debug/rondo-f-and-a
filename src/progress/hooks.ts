@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Topic } from '@/engine/types'
+import { certificationOf } from './certification'
 import { topicProgress } from './level'
 import { useProgressStore } from './store'
 import { computeStreak } from './streak'
@@ -27,4 +28,10 @@ export function useStreak() {
 export function useTopicProgress(topic: Topic) {
   const attempts = useProgressStore((state) => state.attempts)
   return useMemo(() => topicProgress(attempts, topic), [attempts, topic])
+}
+
+/** 論点ごとに、合格したいちばん上の認定 */
+export function useCertification(topic: Topic) {
+  const attempts = useProgressStore((state) => state.attempts)
+  return useMemo(() => certificationOf(attempts, topic), [attempts, topic])
 }

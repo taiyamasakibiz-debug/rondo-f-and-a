@@ -36,6 +36,10 @@ export const routes: RouteObject[] = [
           import('@/features/practice/PracticePage').then((m) => ({ Component: m.PracticePage })),
       },
       {
+        path: 'labs/:labId/exam/:tier',
+        lazy: () => import('@/features/exam/ExamPage').then((m) => ({ Component: m.ExamPage })),
+      },
+      {
         path: 'records',
         lazy: () =>
           import('@/features/records/RecordsPage').then((m) => ({ Component: m.RecordsPage })),

@@ -159,3 +159,55 @@ describe('フリーモード', () => {
     ).not.toBeInTheDocument()
   })
 })
+
+describe('認定テスト', () => {
+  async function withCvpLevel2() {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().load()
+    const at = new Date().toISOString()
+    // 全問正解 2 回（30 XP）で Lv.2
+    const practice = [1, 2].map((seed) => ({
+      id: `practice-${seed}`,
+      templateId: 'cvp.break-even.basic',
+      topic: 'cvp' as const,
+      seed,
+      earned: 5,
+      total: 5,
+      allCorrect: true,
+      steps: [],
+      durationMs: 1,
+      answeredAt: at,
+      createdAt: at,
+      updatedAt: at,
+    }))
+    await useProgressStore.getState().replaceAll({
+      attempts: practice,
+      settings: useProgressStore.getState().settings,
+    })
+    return useProgressStore
+  }
+
+  it('レベルが足りない認定は受けられない', async () => {
+    await withCvpLevel2()
+    await renderAt('/labs/cvp/exam/silver')
+    expect(await screen.findByText(/Lv\.4 から受けられます/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /テストを始める/ })).not.toBeInTheDocument()
+  })
+
+  it('5 問を解くと採点結果が出て、記録にテストの情報が残る', async () => {
+    const store = await withCvpLevel2()
+    await renderAt('/labs/cvp/exam/bronze')
+    await userEvent.click(await screen.findByRole('button', { name: /テストを始める/ }))
+    for (let i = 1; i <= 5; i += 1) {
+      expect(await screen.findByText(`Q${i} / 5`)).toBeInTheDocument()
+      await userEvent.click(
+        screen.getByRole('button', { name: i === 5 ? /解答して採点する/ : /解答して次へ/ }),
+      )
+    }
+    // 何も入力していないので不合格
+    expect(await screen.findByRole('status')).toHaveTextContent('不合格')
+    const examAttempts = store.getState().attempts.filter((a) => a.exam)
+    expect(examAttempts).toHaveLength(5)
+    expect(new Set(examAttempts.map((a) => a.exam!.id)).size).toBe(1)
+  })
+})
