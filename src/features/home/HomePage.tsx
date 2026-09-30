@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
 import { DigitalLines } from '@/components/DigitalLines'
+import { useDocumentTitle } from '@/components/useDocumentTitle'
 import { Button } from '@/components/ui/button'
 import { DailyList } from '@/features/daily/DailyList'
 import { useDaily } from '@/features/daily/useDaily'
@@ -11,6 +12,7 @@ import { dailyPracticePath, nextDailyItem } from '@/progress/daily'
 import { useProgressStore } from '@/progress/store'
 
 export function HomePage() {
+  useDocumentTitle(undefined)
   const streak = useStreak()
   const dailyGoal = useProgressStore((state) => state.settings.dailyGoal)
   const status = useProgressStore((state) => state.status)

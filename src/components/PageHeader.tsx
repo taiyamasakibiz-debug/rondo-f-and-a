@@ -1,3 +1,5 @@
+import { useDocumentTitle } from './useDocumentTitle'
+
 type PageHeaderProps = {
   /** 英字の見出し */
   title: string
@@ -8,6 +10,7 @@ type PageHeaderProps = {
 
 // Tessera の見出しパターン：英字の大見出し + 和文のサブ見出し
 export function PageHeader({ title, subtitle, description }: PageHeaderProps) {
+  useDocumentTitle(subtitle ?? title)
   return (
     <div className="mb-10 flex flex-col gap-2">
       <h1 className="flex flex-col gap-2">

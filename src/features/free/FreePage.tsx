@@ -1,5 +1,6 @@
 import { useParams } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
+import { useDocumentTitle } from '@/components/useDocumentTitle'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { useLedgerStore } from '@/ledger/store'
 import { AccountsPanel } from './AccountsPanel'
@@ -65,10 +66,20 @@ export function FreePanelPage() {
   const Component = PANEL_COMPONENTS[panel as PanelId]
   return (
     <>
-      {!windowMode && <PageHeader title="Free Mode" subtitle="仕訳ラボ・フリーモード" />}
+      {windowMode ? (
+        <WindowTitle panel={panel as PanelId} />
+      ) : (
+        <PageHeader title="Free Mode" subtitle="仕訳ラボ・フリーモード" />
+      )}
       <LedgerStatus>
         <Component />
       </LedgerStatus>
     </>
   )
+}
+
+/** 別ウィンドウでは大きな見出しを出さないが、読み上げとタブのタイトル用に見出しを持つ */
+function WindowTitle({ panel }: { panel: PanelId }) {
+  useDocumentTitle(PANELS[panel].ja)
+  return <h1 className="sr-only">フリーモード・{PANELS[panel].ja}</h1>
 }
