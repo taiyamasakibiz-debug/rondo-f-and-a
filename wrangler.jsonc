@@ -6,6 +6,6 @@
   "assets": {
     "directory": "./dist/",
     // 見つからない URL は index.html を返し、画面遷移は React Router に任せる
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+  },
 }
