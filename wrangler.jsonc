@@ -7,6 +7,8 @@
   "workers_dev": true,
   // main 以外のブランチは、ブランチごとのプレビュー URL で確認する
   "preview_urls": true,
+  // main 以外のブランチのビルドで使う `wrangler preview` に必要（中身は空でよい）
+  "previews": {},
   "assets": {
     "directory": "./dist/",
     // 見つからない URL は index.html を返し、画面遷移は React Router に任せる
