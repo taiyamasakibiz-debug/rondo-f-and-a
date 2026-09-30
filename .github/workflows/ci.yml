@@ -1,8 +1,8 @@
 name: CI
 
+# どのブランチに push しても、lint・書式・型・テスト・ビルドを確かめる
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
