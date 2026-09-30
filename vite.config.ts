@@ -13,6 +13,20 @@ export default defineConfig({
       // 新しい版が出たら画面で知らせて、ユーザーの操作で更新する
       registerType: 'prompt',
       includeAssets: ['favicon.svg'],
+      workbox: {
+        // 和文フォントは細かく分割されていて全部を先にキャッシュすると重いため、
+        // 表示に使ったファイルだけを後から貯めてオフラインでも使えるようにする
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'font',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fonts',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+        ],
+      },
       manifest: {
         name: 'Luminous Insight',
         short_name: 'Luminous',
