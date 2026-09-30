@@ -24,10 +24,7 @@ export function LabCard({ lab, index }: LabCardProps) {
         to={`/labs/${lab.id}`}
         className="group flex h-full min-h-60 flex-col gap-4 rounded-xl bg-fog p-8 transition-colors hover:bg-sky-50"
       >
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-bold tracking-caps text-ink-muted">{number}</span>
-          <lab.icon className="size-5 text-ink-muted" aria-hidden />
-        </div>
+        <span className="text-[13px] font-bold tracking-caps text-ink-muted">{number}</span>
         <div className="flex flex-col gap-2">
           <span className="text-[28px] leading-[1.1] font-bold tracking-[-0.04em]">
             {lab.nameEn}

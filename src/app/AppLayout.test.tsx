@@ -35,3 +35,24 @@ describe('ルーティング', () => {
     expect(screen.getByRole('heading', { name: /ページが見つかりません/ })).toBeInTheDocument()
   })
 })
+
+describe('問題を解く', () => {
+  it('CVP ラボで問題を解いて採点できる', async () => {
+    renderAt('/labs/cvp/practice')
+    const inputs = screen.getAllByRole('textbox')
+    expect(inputs).toHaveLength(3)
+    await userEvent.type(inputs[0]!, '1')
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/INCORRECT|CORRECT/)
+    // 未回答のステップには正解が表示される
+    expect(screen.getAllByText(/正解は/).length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: /解説/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /次の問題/ })).toBeInTheDocument()
+  })
+
+  it('問題がまだないラボは準備中と表示する', () => {
+    renderAt('/labs/journal/practice')
+    expect(screen.getByText('このラボの問題は準備中です。')).toBeInTheDocument()
+  })
+})

@@ -48,6 +48,20 @@
   --on-ember-tint: #9a3f1f;
   --focus: #121213;
 
+  /* Tessera: 正解・不正解。回答直後のフィードバックと成績表示だけに使う */
+  --correct-50: #e8f5f1;
+  --correct-100: #d4ede5;
+  --correct-300: #9fdccd;
+  --correct: #3dbfa5;
+  --correct-text: #16725f;
+  --on-correct: #121213;
+  --incorrect-50: #fcedf0;
+  --incorrect-100: #f8dbe1;
+  --incorrect-300: #f0a9b6;
+  --incorrect: #ee8599;
+  --incorrect-text: #b3374f;
+  --on-incorrect: #121213;
+
   /* Tessera: グラデーション */
   --sky-wash: radial-gradient(
     90% 85% at 42% 92%,
@@ -57,6 +71,20 @@
     #f1f2f2 100%
   );
   --sky-wash-soft: linear-gradient(180deg, #ffffff 0%, #eef3f5 100%);
+  --correct-wash: radial-gradient(
+    90% 85% at 42% 92%,
+    #d4ede5 0%,
+    #e3f1ec 45%,
+    #eff2f1 80%,
+    #f3f4f3 100%
+  );
+  --incorrect-wash: radial-gradient(
+    90% 85% at 42% 92%,
+    #f8dbe1 0%,
+    #f9e7ea 45%,
+    #f3f0f1 80%,
+    #f4f3f3 100%
+  );
 
   /* shadcn/ui の変数への割り当て */
   --background: var(--paper);
@@ -73,7 +101,7 @@
   --muted-foreground: var(--ink-muted);
   --accent: var(--sky-50);
   --accent-foreground: var(--ink);
-  /* Tessera に赤系の色はないため、shadcn の既定値のまま（正誤の色は今後デザインシステムに追加する） */
+  /* 削除などの危険な操作の色。Tessera の incorrect は正誤表示専用なので使わず、shadcn の既定値のまま */
   --destructive: oklch(0.577 0.245 27.325);
   --border: var(--line-soft);
   --input: var(--line);
@@ -113,6 +141,16 @@
   --ember-tint: #3a2219;
   --on-ember-tint: #f5b39b;
   --focus: #ffffff;
+  --correct-50: #132420;
+  --correct-100: #183029;
+  --correct-300: #2f6f60;
+  --correct-text: #7fd8c3;
+  --incorrect-50: #2a1619;
+  --incorrect-100: #3a1d22;
+  --incorrect-300: #8a4452;
+  --incorrect-text: #f4a3b3;
+  --correct-wash: linear-gradient(var(--correct-100), var(--correct-100));
+  --incorrect-wash: linear-gradient(var(--incorrect-100), var(--incorrect-100));
   --sky-wash: radial-gradient(90% 85% at 42% 92%, #24363e 0%, #1c2a30 45%, #151c20 100%);
   --sky-wash-soft: linear-gradient(180deg, #121213 0%, #172024 100%);
   --destructive: oklch(0.704 0.191 22.216);
@@ -165,6 +203,18 @@
   --color-ember-tint: var(--ember-tint);
   --color-on-ember-tint: var(--on-ember-tint);
   --color-focus: var(--focus);
+  --color-correct-50: var(--correct-50);
+  --color-correct-100: var(--correct-100);
+  --color-correct-300: var(--correct-300);
+  --color-correct: var(--correct);
+  --color-correct-text: var(--correct-text);
+  --color-on-correct: var(--on-correct);
+  --color-incorrect-50: var(--incorrect-50);
+  --color-incorrect-100: var(--incorrect-100);
+  --color-incorrect-300: var(--incorrect-300);
+  --color-incorrect: var(--incorrect);
+  --color-incorrect-text: var(--incorrect-text);
+  --color-on-incorrect: var(--on-incorrect);
 
   /* shadcn/ui の色 */
   --color-sidebar-ring: var(--sidebar-ring);
@@ -277,6 +327,12 @@
 }
 @utility bg-sky-wash-soft {
   background-image: var(--sky-wash-soft);
+}
+@utility bg-correct-wash {
+  background-image: var(--correct-wash);
+}
+@utility bg-incorrect-wash {
+  background-image: var(--incorrect-wash);
 }
 
 @layer base {

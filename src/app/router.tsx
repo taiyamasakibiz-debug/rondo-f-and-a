@@ -3,6 +3,7 @@ import { HomePage } from '@/features/home/HomePage'
 import { LabPage } from '@/features/labs/LabPage'
 import { LabsPage } from '@/features/labs/LabsPage'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
+import { PracticePage } from '@/features/practice/PracticePage'
 import { RecordsPage } from '@/features/records/RecordsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { AppLayout } from './AppLayout'
@@ -15,6 +16,7 @@ export const routes = [
       { index: true, element: <HomePage /> },
       { path: 'labs', element: <LabsPage /> },
       { path: 'labs/:labId', element: <LabPage /> },
+      { path: 'labs/:labId/practice', element: <PracticePage /> },
       { path: 'records', element: <RecordsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },
