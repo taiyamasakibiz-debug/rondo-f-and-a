@@ -1,9 +1,13 @@
 import { DigitalLines } from '@/components/DigitalLines'
 import { LabCard } from '@/features/labs/LabCard'
 import { LABS } from '@/features/labs/labs'
+import { useStreak } from '@/progress/hooks'
+import { useProgressStore } from '@/progress/store'
 
 // 今日のデイリー、ストリーク、レベル一覧はフェーズ 5 で作る
 export function HomePage() {
+  const streak = useStreak()
+  const dailyGoal = useProgressStore((state) => state.settings.dailyGoal)
   return (
     <>
       <section className="relative -mx-4 mb-16 overflow-hidden bg-sky-wash px-5 py-16 md:mx-0 md:rounded-xl md:px-16 md:py-24">
@@ -17,9 +21,22 @@ export function HomePage() {
             <br />
             Training.
           </h1>
-          <p className="max-w-md font-ja text-[15px] leading-loose font-medium tracking-ja text-ink-body md:text-lg">
-            問題の仕組みができたら、ここに今日の3問が並びます。
-          </p>
+          <dl className="flex flex-wrap gap-x-10 gap-y-4">
+            <div className="flex flex-col gap-1">
+              <dt className="text-[13px] font-bold tracking-caps text-ink-muted">TODAY</dt>
+              <dd className="text-[28px] font-bold tracking-snug tabular-nums">
+                {streak.todayCount} / {dailyGoal}
+                <span className="ml-2 font-ja text-[15px] text-ink-body">問</span>
+              </dd>
+            </div>
+            <div className="flex flex-col gap-1">
+              <dt className="text-[13px] font-bold tracking-caps text-ink-muted">STREAK</dt>
+              <dd className="text-[28px] font-bold tracking-snug tabular-nums">
+                {streak.current}
+                <span className="ml-2 font-ja text-[15px] text-ink-body">日</span>
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 

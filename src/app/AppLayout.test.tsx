@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -54,5 +54,26 @@ describe('問題を解く', () => {
   it('問題がまだないラボは準備中と表示する', () => {
     renderAt('/labs/journal/practice')
     expect(screen.getByText('このラボの問題は準備中です。')).toBeInTheDocument()
+  })
+})
+
+describe('記録', () => {
+  it('問題を解くと記録ページとホームに反映される', async () => {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().resetAll()
+
+    renderAt('/labs/cvp/practice')
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+    expect(await screen.findByText(/\+\d+ XP/)).toBeInTheDocument()
+    await vi.waitFor(() => expect(useProgressStore.getState().attempts).toHaveLength(1))
+
+    cleanup()
+    renderAt('/records')
+    expect(screen.getByRole('link', { name: /損益分岐点売上高と安全余裕率/ })).toBeInTheDocument()
+    expect(screen.getByText(/1 問/)).toBeInTheDocument()
+
+    cleanup()
+    renderAt('/')
+    expect(screen.getByText('TODAY').nextElementSibling).toHaveTextContent('1 / 3')
   })
 })

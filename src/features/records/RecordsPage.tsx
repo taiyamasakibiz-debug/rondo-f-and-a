@@ -1,12 +1,243 @@
+import { ArrowRight } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { useMemo } from 'react'
+import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
+import { LABS, type Lab, findLab } from '@/features/labs/labs'
+import { findTemplate } from '@/problems'
+import { useStreak, useTopicProgress } from '@/progress/hooks'
+import { MAX_FREEZES } from '@/progress/streak'
+import { useProgressStore } from '@/progress/store'
+import type { Attempt } from '@/progress/types'
 
-// レベル、認定、ストリーク、間違いノートはフェーズ 3・5 で作る
 export function RecordsPage() {
+  const status = useProgressStore((state) => state.status)
+
   return (
-    <PageHeader
-      title="Records"
-      subtitle="記録"
-      description="レベル・認定・ストリーク・間違いノートがここに並びます。"
-    />
+    <>
+      <PageHeader title="Records" subtitle="記録" />
+      {status === 'error' ? (
+        <p role="alert" className="text-body-sm text-ink-body">
+          記録を読み込めませんでした。ブラウザの設定で、このサイトのデータ保存が許可されているか確認してください。
+        </p>
+      ) : (
+        <div className="flex flex-col gap-16">
+          <StreakSection />
+          <LevelsSection />
+          <MistakesSection />
+        </div>
+      )}
+    </>
   )
+}
+
+function SectionHeading({ number, en, ja }: { number: string; en: string; ja: string }) {
+  return (
+    <div className="mb-6 flex flex-col gap-2">
+      <h2 className="flex items-baseline gap-4">
+        <span className="text-[13px] font-bold tracking-caps text-ink-muted">{number}</span>
+        <span className="text-[28px] leading-[1.1] font-bold tracking-[-0.04em]">{en}</span>
+      </h2>
+      <p className="text-sub-ja text-ink-muted">{ja}</p>
+    </div>
+  )
+}
+
+function StreakSection() {
+  const streak = useStreak()
+  const settings = useProgressStore((state) => state.settings)
+  const todayProgress = Math.min(1, streak.todayCount / settings.dailyGoal)
+
+  return (
+    <section>
+      <SectionHeading number="01" en="Streak" ja="ストリーク" />
+      <div className="grid gap-6 md:grid-cols-3">
+        <KeyNumber label="CURRENT" value={streak.current} unit="日" note="連続でデイリーを達成" />
+        <KeyNumber label="BEST" value={streak.best} unit="日" note="これまでの最長" />
+        <KeyNumber
+          label="FREEZE"
+          value={streak.freezes}
+          unit={`/ ${MAX_FREEZES}`}
+          note="7 日続けると 1 つ。休んだ日に自動で使われる"
+        />
+      </div>
+      <div className="mt-6 flex flex-col gap-3 rounded-md bg-fog p-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="font-ja text-[15px] font-bold tracking-ja">今日のデイリー</span>
+          <span className="text-label tabular-nums">
+            {streak.todayCount} / {settings.dailyGoal} 問
+          </span>
+        </div>
+        <ProgressBar value={todayProgress} label="今日のデイリーの進み具合" />
+        <span className="text-caption text-ink-muted">
+          {streak.todayGoalMet
+            ? '今日のデイリーは達成済みです。'
+            : 'ノルマを達成するとストリークが伸びます。'}
+        </span>
+      </div>
+    </section>
+  )
+}
+
+/** Tessera の KEY NUMBER カード（白地に 1px の線） */
+function KeyNumber({
+  label,
+  value,
+  unit,
+  note,
+}: {
+  label: string
+  value: number
+  unit: string
+  note: string
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-paper p-8">
+      <span className="text-[13px] font-bold tracking-caps text-ink-muted">{label}</span>
+      <div className="flex items-baseline gap-2">
+        <span className="text-[64px] leading-none font-bold tracking-tight tabular-nums">
+          {value}
+        </span>
+        <span className="text-label text-ink-muted">{unit}</span>
+      </div>
+      <span className="text-caption text-ink-muted">{note}</span>
+    </div>
+  )
+}
+
+function ProgressBar({ value, label }: { value: number; label: string }) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(value * 100)}
+      className="h-1.5 overflow-hidden rounded-pill bg-line-soft"
+    >
+      <motion.div
+        initial={reduceMotion ? false : { width: 0 }}
+        animate={{ width: `${value * 100}%` }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="h-full rounded-pill bg-ink"
+      />
+    </div>
+  )
+}
+
+function LevelsSection() {
+  return (
+    <section>
+      <SectionHeading number="02" en="Levels" ja="レベルと熟練度" />
+      <ul className="flex flex-col">
+        {LABS.map((lab) => (
+          <LevelRow key={lab.id} lab={lab} />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function LevelRow({ lab }: { lab: Lab }) {
+  const progress = useTopicProgress(lab.id)
+  return (
+    <li className="grid gap-3 border-t border-line py-6 last:border-b md:grid-cols-[1fr_2fr] md:items-center md:gap-8">
+      <div className="flex items-baseline gap-4">
+        <span className="text-[22px] font-bold tracking-snug">{lab.nameEn}</span>
+        <span className="font-ja text-[13px] font-bold tracking-ja text-ink-muted">{lab.name}</span>
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between gap-4 text-caption text-ink-muted">
+          <span>
+            <strong className="text-label text-ink">Lv.{progress.level}</strong>
+            <span className="ml-3 tabular-nums">
+              {progress.nextLevelXp === null
+                ? `${progress.xp} XP（最大レベル）`
+                : `${progress.xp} / ${progress.nextLevelXp} XP`}
+            </span>
+          </span>
+          <span className="tabular-nums">
+            熟練度 {progress.mastery === null ? '—' : `${Math.round(progress.mastery * 100)}%`}
+            <span className="ml-3">{progress.attempts} 問</span>
+          </span>
+        </div>
+        <ProgressBar value={progress.progress} label={`${lab.name}の次のレベルまでの進み具合`} />
+      </div>
+    </li>
+  )
+}
+
+const MISTAKE_LIMIT = 10
+
+/** 全問正解できなかった問題。同じ問題（テンプレートとシード）は最新の 1 回だけ */
+function useMistakes(attempts: readonly Attempt[]) {
+  return useMemo(() => {
+    const latest = new Map<string, Attempt>()
+    for (const attempt of attempts) {
+      if (attempt.deletedAt) continue
+      latest.set(`${attempt.templateId}:${attempt.seed}`, attempt)
+    }
+    return [...latest.values()]
+      .filter((attempt) => !attempt.allCorrect)
+      .sort((a, b) => b.answeredAt.localeCompare(a.answeredAt))
+      .slice(0, MISTAKE_LIMIT)
+  }, [attempts])
+}
+
+function MistakesSection() {
+  const attempts = useProgressStore((state) => state.attempts)
+  const mistakes = useMistakes(attempts)
+
+  return (
+    <section>
+      <SectionHeading number="03" en="Mistakes" ja="間違いノート" />
+      {mistakes.length === 0 ? (
+        <p className="text-body-sm text-ink-muted">
+          全問正解できなかった問題がここに集まります。同じ問題をもう一度解いて全問正解すると、ここから消えます。
+        </p>
+      ) : (
+        <ul className="flex flex-col">
+          {mistakes.map((attempt) => {
+            const lab = findLab(attempt.topic)
+            const template = findTemplate(attempt.templateId)
+            return (
+              <li key={attempt.id} className="border-t border-line last:border-b">
+                <Link
+                  to={`/labs/${attempt.topic}/practice?template=${encodeURIComponent(attempt.templateId)}&seed=${attempt.seed}`}
+                  className="group flex items-center gap-4 py-5 md:gap-7"
+                >
+                  <span className="hidden w-24 shrink-0 text-[13px] tracking-text text-ink-muted tabular-nums md:block">
+                    {formatDate(attempt.answeredAt)}
+                  </span>
+                  <span className="shrink-0 rounded-pill border border-line px-3 py-1 text-[11px] font-bold tracking-[0.1em]">
+                    {lab?.nameEn.toUpperCase() ?? attempt.topic.toUpperCase()}
+                  </span>
+                  <span className="flex-1 text-[15px] font-medium tracking-text group-hover:text-ember-text">
+                    {template?.title ?? attempt.templateId}
+                  </span>
+                  <span className="shrink-0 text-caption text-ink-muted tabular-nums">
+                    {attempt.earned} / {attempt.total} 点
+                  </span>
+                  <span
+                    className="flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink transition-colors group-hover:bg-ink group-hover:text-on-ink"
+                    aria-hidden
+                  >
+                    <ArrowRight className="size-4" />
+                  </span>
+                  <span className="sr-only">もう一度解く</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/** Tessera の日付表記 2026.10.01 */
+function formatDate(iso: string): string {
+  const date = new Date(iso)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }

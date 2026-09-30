@@ -1,0 +1,30 @@
+import { useEffect, useMemo, useState } from 'react'
+import type { Topic } from '@/engine/types'
+import { topicProgress } from './level'
+import { useProgressStore } from './store'
+import { computeStreak } from './streak'
+
+/**
+ * 今の時刻。1 分ごとに更新するので、アプリを開いたまま日付が変わっても
+ * ストリークや「今日」の数え方が追いつく。
+ */
+export function useNow(intervalMs = 60_000): Date {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), intervalMs)
+    return () => clearInterval(timer)
+  }, [intervalMs])
+  return now
+}
+
+export function useStreak() {
+  const attempts = useProgressStore((state) => state.attempts)
+  const settings = useProgressStore((state) => state.settings)
+  const now = useNow()
+  return useMemo(() => computeStreak(attempts, settings, now), [attempts, settings, now])
+}
+
+export function useTopicProgress(topic: Topic) {
+  const attempts = useProgressStore((state) => state.attempts)
+  return useMemo(() => topicProgress(attempts, topic), [attempts, topic])
+}
