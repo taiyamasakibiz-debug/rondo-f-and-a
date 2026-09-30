@@ -409,7 +409,7 @@ domain はどこにも依存しない
 - [ ] スマホ表示の調整、アクセシビリティの確認
 
 ### フェーズ 6：問題を増やす
-- [ ] NotebookLM 用のプロンプトを `docs/prompts/` に用意する
+- [x] NotebookLM 用のプロンプトを `docs/prompts/` に用意する（`docs/prompts/notebooklm-problem-draft.md`）
 - [ ] 論点ごとに問題を増やす（目標：各論点 20 テンプレート）
 
 ---
