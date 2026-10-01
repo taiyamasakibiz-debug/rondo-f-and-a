@@ -30,7 +30,8 @@ export function LabCard({ lab, index }: LabCardProps) {
           <span className="text-[13px] font-bold tracking-caps text-ink-muted">{number}</span>
           <span className="flex items-center gap-2">
             <span className="rounded-pill border border-line px-3 py-1 text-[11px] font-bold tracking-[0.1em]">
-              LV.{progress.level}
+              {progress.xp} XP
+              <span className="sr-only">（このラボで積み上げた努力量）</span>
             </span>
           </span>
         </div>
@@ -44,25 +45,21 @@ export function LabCard({ lab, index }: LabCardProps) {
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between text-caption text-ink-muted tabular-nums">
             <span>
-              {progress.nextLevelXp === null
-                ? '最大レベル'
-                : `次のレベルまで ${progress.nextLevelXp - progress.xp} XP`}
-            </span>
-            <span>
               熟練度 {progress.mastery === null ? '—' : `${Math.round(progress.mastery * 100)}%`}
             </span>
+            <span>{progress.attempts} 問</span>
           </div>
           <div
             role="progressbar"
-            aria-label={`${lab.name}の次のレベルまでの進み具合`}
+            aria-label={`${lab.name}の熟練度（直近の得点率）`}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(progress.progress * 100)}
+            aria-valuenow={Math.round((progress.mastery ?? 0) * 100)}
             className="h-1 overflow-hidden rounded-pill bg-line"
           >
             <motion.div
               initial={reduceMotion ? false : { width: 0 }}
-              animate={{ width: `${progress.progress * 100}%` }}
+              animate={{ width: `${(progress.mastery ?? 0) * 100}%` }}
               transition={{ duration: 0.8, delay: 0.2 + index * 0.06, ease: [0.16, 1, 0.3, 1] }}
               className="h-full rounded-pill bg-ink"
             />

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addDays, dayKey, daysBetween } from './day'
-import { levelFromXp, topicProgress, xpForAttempt } from './level'
+import { topicProgress, xpForAttempt } from './level'
 import { buildReviewCards, dueCards, nextCard } from './review'
 import { computeStreak } from './streak'
 import { type Attempt, DEFAULT_SETTINGS, type Settings } from './types'
@@ -126,18 +126,11 @@ describe('computeStreak', () => {
   })
 })
 
-describe('レベルと熟練度', () => {
+describe('XP と熟練度', () => {
   it('XP は得点率 × 10、全問正解で +5', () => {
     expect(xpForAttempt({ earned: 5, total: 5, allCorrect: true })).toBe(15)
     expect(xpForAttempt({ earned: 3, total: 5, allCorrect: false })).toBe(6)
     expect(xpForAttempt({ earned: 0, total: 5, allCorrect: false })).toBe(0)
-  })
-
-  it('XP からレベルと次のレベルまでの進み具合を出す', () => {
-    expect(levelFromXp(0)).toMatchObject({ level: 1, nextLevelXp: 30, progress: 0 })
-    expect(levelFromXp(45)).toMatchObject({ level: 2, currentLevelXp: 30, nextLevelXp: 80 })
-    expect(levelFromXp(45).progress).toBeCloseTo(0.3)
-    expect(levelFromXp(5000)).toMatchObject({ level: 10, nextLevelXp: null, progress: 1 })
   })
 
   it('論点ごとに集計し、熟練度は新しい解答ほど重く数える', () => {

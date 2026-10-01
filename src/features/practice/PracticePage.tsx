@@ -19,11 +19,12 @@ import { findLab } from '@/features/labs/labs'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { findTemplate, templatesForTopic } from '@/problems'
 import { dailyPracticePath } from '@/progress/daily'
-import { levelFromXp, topicProgress } from '@/progress/level'
+import { topicProgress } from '@/progress/level'
 import { nextAttemptXp } from '@/progress/xp'
 import { useProgressStore } from '@/progress/store'
 import type { Attempt } from '@/progress/types'
 import { computeStreak } from '@/progress/streak'
+import { computeCourse } from '@/progress/units'
 import { AnswerFeedback } from './AnswerFeedback'
 import { type Reward, RewardPanel } from './Rewards'
 import { ProblemBlocks } from './ProblemBlocks'
@@ -149,6 +150,7 @@ function Practice({
     const store = useProgressStore.getState()
     const before = topicProgress(store.attempts, topic)
     const streakBefore = computeStreak(store.attempts, store.settings, submittedAt)
+    const courseBefore = computeCourse(store.attempts, store.settings, submittedAt)
     const xp = nextAttemptXp(store.attempts, {
       templateId: template.id,
       earned: graded.earned,
@@ -156,7 +158,7 @@ function Practice({
       allCorrect: graded.allCorrect,
       answeredAt: submittedAt.toISOString(),
     })
-    setReward({ xp, before, after: levelFromXp(before.xp + xp) })
+    setReward({ xp, totalBefore: before.xp, totalAfter: before.xp + xp })
     const saving = recordAttempt({
       templateId: template.id,
       topic,
@@ -174,16 +176,35 @@ function Practice({
     const attempt = await saving
     if (attempt) {
       setSaved(attempt)
-      // この 1 問で今日のノルマを達成したら、ストリークが伸びた演出を出す
       const after = useProgressStore.getState()
+      // この 1 問で、はじめて定着した単元と、上がったコースレベル（実力がついた瞬間のお祝い）
+      const courseAfter = computeCourse(after.attempts, after.settings, submittedAt)
+      const wasAchieved = new Set(
+        courseBefore.stages
+          .flatMap((s) => s.units)
+          .filter((u) => u.achieved)
+          .map((u) => u.unit.id),
+      )
+      const newlyAchieved = courseAfter.stages
+        .flatMap((s) => s.units)
+        .find((u) => u.achieved && !wasAchieved.has(u.unit.id))
+      const levelFrom = courseBefore.level.level
+      const levelTo = courseAfter.level.level
+      // この 1 問で今日のノルマを達成したら、ストリークが伸びた演出を出す
       const streakAfter = computeStreak(after.attempts, after.settings, submittedAt)
-      if (!streakBefore.todayGoalMet && streakAfter.todayGoalMet) {
-        setReward((prev) =>
-          prev
-            ? { ...prev, streak: { from: streakBefore.current, to: streakAfter.current } }
-            : prev,
-        )
-      }
+      const streakUp = !streakBefore.todayGoalMet && streakAfter.todayGoalMet
+      setReward((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...(newlyAchieved ? { consolidated: { unitName: newlyAchieved.unit.name } } : {}),
+              ...(levelTo > levelFrom ? { courseLevel: { from: levelFrom, to: levelTo } } : {}),
+              ...(streakUp
+                ? { streak: { from: streakBefore.current, to: streakAfter.current } }
+                : {}),
+            }
+          : prev,
+      )
     }
   }
   // デイリーから開いたときは、今日のデイリーの何問目か（デイリーにない問題なら -1）

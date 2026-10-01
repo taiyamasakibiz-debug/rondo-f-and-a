@@ -298,7 +298,11 @@ function ProgressBar({ value, label }: { value: number; label: string }) {
 function LevelsSection() {
   return (
     <section>
-      <SectionHeading number="03" en="Levels" ja="レベルと熟練度" />
+      <SectionHeading number="03" en="Labs" ja="ラボごとの努力量と熟練度" />
+      <p className="mb-4 text-caption text-ink-muted">
+        XP
+        は解いた量（積み上げた努力量）、熟練度は直近の得点率です。実力の目安は、上の学習コースのレベルと単元の状態で見ます。
+      </p>
       <ul className="flex flex-col">
         {LABS.map((lab) => (
           <LevelRow key={lab.id} lab={lab} />
@@ -318,20 +322,15 @@ function LevelRow({ lab }: { lab: Lab }) {
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-4 text-caption text-ink-muted">
-          <span>
-            <strong className="text-label text-ink">Lv.{progress.level}</strong>
-            <span className="ml-3 tabular-nums">
-              {progress.nextLevelXp === null
-                ? `${progress.xp} XP（最大レベル）`
-                : `${progress.xp} / ${progress.nextLevelXp} XP`}
-            </span>
+          <span className="tabular-nums">
+            <strong className="text-label text-ink">{progress.xp} XP</strong>
+            <span className="ml-3">{progress.attempts} 問</span>
           </span>
           <span className="tabular-nums">
             熟練度 {progress.mastery === null ? '—' : `${Math.round(progress.mastery * 100)}%`}
-            <span className="ml-3">{progress.attempts} 問</span>
           </span>
         </div>
-        <ProgressBar value={progress.progress} label={`${lab.name}の次のレベルまでの進み具合`} />
+        <ProgressBar value={progress.mastery ?? 0} label={`${lab.name}の熟練度（直近の得点率）`} />
       </div>
     </li>
   )

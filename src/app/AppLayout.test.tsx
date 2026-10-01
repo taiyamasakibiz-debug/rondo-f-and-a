@@ -360,29 +360,31 @@ describe('認定テスト', () => {
   })
 })
 
-describe('正解とレベルアップの演出', () => {
-  /** 仕訳ラボで全問正解 5 回（75 XP）。あと 5 XP で Lv.3 */
-  async function withJournalXp75() {
+describe('正解と定着の演出', () => {
+  async function withAttempts(
+    attempts: { templateId: string; topic: 'journal'; daysAgo: number; seed: number }[],
+  ) {
     const { useProgressStore } = await import('@/progress/store')
     await useProgressStore.getState().load()
-    const at = new Date(Date.now() - 86_400_000 * 3).toISOString()
-    const attempts = [1, 2, 3, 4, 5].map((seed) => ({
-      id: `journal-${seed}`,
-      // 型を変えて、同じ型の連続正解による XP の上限に当たらないようにする
-      templateId: `journal.past-${seed}`,
-      topic: 'journal' as const,
-      seed,
-      earned: 1,
-      total: 1,
-      allCorrect: true,
-      steps: [],
-      durationMs: 1,
-      answeredAt: at,
-      createdAt: at,
-      updatedAt: at,
-    }))
+    const records = attempts.map(({ templateId, topic, daysAgo, seed }) => {
+      const at = new Date(Date.now() - 86_400_000 * daysAgo).toISOString()
+      return {
+        id: `${templateId}-${seed}`,
+        templateId,
+        topic,
+        seed,
+        earned: 1,
+        total: 1,
+        allCorrect: true,
+        steps: [],
+        durationMs: 1,
+        answeredAt: at,
+        createdAt: at,
+        updatedAt: at,
+      }
+    })
     await useProgressStore.getState().replaceAll({
-      attempts,
+      attempts: records,
       settings: useProgressStore.getState().settings,
     })
     return useProgressStore
@@ -402,33 +404,53 @@ describe('正解とレベルアップの演出', () => {
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
   }
 
-  it('全問正解すると波紋が出て、経験値のバーが伸び、レベルが上がる', async () => {
-    const store = await withJournalXp75()
+  /** 財務諸表・仕訳基礎の全型を、10 日前に全問正解した記録（定着まで、あと「間を空けた正解」だけ） */
+  async function withJournalAlmostConsolidated() {
+    const { findUnit } = await import('@/course/units')
+    return withAttempts(
+      findUnit('acc-bs-pl')!.templateIds.map((templateId, seed) => ({
+        templateId,
+        topic: 'journal' as const,
+        daysAgo: 10,
+        seed,
+      })),
+    )
+  }
+
+  it('全問正解すると波紋が出て、XP と、このラボの累計 XP が出る', async () => {
+    const store = await withAttempts([])
     await solveCreditSale()
 
     const feedback = (await screen.findAllByRole('status'))[0]!
     expect(feedback).toHaveTextContent('全問正解')
     expect(within(feedback).getByTestId('burst')).toBeInTheDocument()
     expect(screen.getByText('+15 XP')).toBeInTheDocument()
-    expect(screen.getByRole('progressbar', { name: '次のレベルまでの経験値' })).toHaveAttribute(
-      'aria-valuenow',
-      String(Math.round((10 / 70) * 100)),
-    )
-    // バーが満タンになったところで、レベルアップのカードに切り替わる
-    expect(await screen.findByText('LEVEL UP', {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(screen.getByText('Lv.3')).toBeInTheDocument()
+    expect(screen.getByText(/このラボの累計/)).toBeInTheDocument()
+    // 解いた量ではレベルは上がらない
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    expect(screen.queryByText('COURSE LEVEL UP')).not.toBeInTheDocument()
     await store.getState().resetAll()
   })
 
-  it('間違えたときは波紋を出さず、レベルも上がらない', async () => {
-    const store = await withJournalXp75()
+  it('間を空けて解き直して単元が定着すると、定着とコースレベルのお祝いが出る', async () => {
+    const store = await withJournalAlmostConsolidated()
+    await solveCreditSale()
+
+    expect(await screen.findByText('COURSE LEVEL UP', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(screen.getByText('「財務諸表・仕訳基礎」が定着しました')).toBeInTheDocument()
+    expect(screen.getByText('Lv.1')).toBeInTheDocument()
+    await store.getState().resetAll()
+  })
+
+  it('間違えたときは波紋もお祝いも出さない', async () => {
+    const store = await withJournalAlmostConsolidated()
     await renderAt('/labs/journal/practice?template=journal.credit-sale&seed=42')
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
     const feedback = (await screen.findAllByRole('status'))[0]!
     expect(feedback).toHaveTextContent('INCORRECT')
     expect(within(feedback).queryByTestId('burst')).not.toBeInTheDocument()
     await new Promise((resolve) => setTimeout(resolve, 1200))
-    expect(screen.queryByText('LEVEL UP')).not.toBeInTheDocument()
+    expect(screen.queryByText('COURSE LEVEL UP')).not.toBeInTheDocument()
     await store.getState().resetAll()
   })
 })
