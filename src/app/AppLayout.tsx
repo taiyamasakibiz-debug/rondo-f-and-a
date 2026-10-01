@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
+import { NavLink, Outlet, ScrollRestoration, useLocation, useSearchParams } from 'react-router'
 import { useTextInputFocused } from '@/components/useTextInputFocused'
 import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
@@ -24,6 +24,7 @@ export function AppLayout() {
       <div className="min-h-dvh bg-background p-3 text-foreground md:p-4">
         <Outlet />
         <PwaUpdatePrompt />
+        <ScrollRestoration />
       </div>
     )
   }
@@ -97,6 +98,8 @@ export function AppLayout() {
       </nav>
 
       <PwaUpdatePrompt />
+      {/* 画面を移ったら先頭から表示する（戻るときは元の位置に戻す） */}
+      <ScrollRestoration />
     </div>
   )
 }

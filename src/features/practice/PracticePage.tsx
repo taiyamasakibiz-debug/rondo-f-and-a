@@ -73,6 +73,8 @@ function Practice({
   const [reward, setReward] = useState<Reward | null>(null)
   const [saveError, setSaveError] = useState(false)
   const [startedAt, setStartedAt] = useState(() => Date.now())
+  // 次の問題に進むたびに増やし、入力欄（仕訳の行など、欄の中に状態を持つもの）を作り直す
+  const [round, setRound] = useState(0)
   const navigate = useNavigate()
   const daily = useDaily()
 
@@ -150,6 +152,7 @@ function Practice({
     setReward(null)
     setSaveError(false)
     setStartedAt(Date.now())
+    setRound((value) => value + 1)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
@@ -182,7 +185,7 @@ function Practice({
 
         <ProblemBlocks blocks={template.body(params)} />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-10">
+        <form key={round} onSubmit={handleSubmit} className="flex flex-col gap-10">
           {template.steps.map((step, index) => (
             <StepCard
               key={step.id}

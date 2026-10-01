@@ -48,3 +48,39 @@ describe('useTextInputFocused', () => {
     expect(isTextEntry(null)).toBe(false)
   })
 })
+
+describe('useTextInputFocused（キーボードだけ閉じたとき）', () => {
+  it('フォーカスが残っていても、見えている高さが元に戻ったら false にする', async () => {
+    const listeners = new Set<() => void>()
+    const viewport = {
+      height: window.innerHeight,
+      scale: 1,
+      addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+      removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+    }
+    Object.defineProperty(window, 'visualViewport', { value: viewport, configurable: true })
+    const resize = (height: number) =>
+      act(() => {
+        viewport.height = height
+        for (const listener of listeners) listener()
+      })
+    try {
+      render(<Probe />)
+      act(() => screen.getByLabelText('金額').focus())
+      await settle()
+      expect(screen.getByText('入力中')).toBeInTheDocument()
+
+      resize(window.innerHeight - 300) // キーボードが出た
+      expect(screen.getByText('入力中')).toBeInTheDocument()
+      resize(window.innerHeight) // キーボードだけ閉じた（フォーカスは残る）
+      expect(screen.getByText('入力していない')).toBeInTheDocument()
+
+      // もう一度入力欄を触ると、また隠す
+      act(() => screen.getByLabelText('ノルマ').focus())
+      await settle()
+      expect(screen.getByText('入力中')).toBeInTheDocument()
+    } finally {
+      Reflect.deleteProperty(window, 'visualViewport')
+    }
+  })
+})

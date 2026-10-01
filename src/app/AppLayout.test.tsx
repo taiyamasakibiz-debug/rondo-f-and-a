@@ -73,6 +73,12 @@ describe('問題を解く', () => {
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('全問正解')
+
+    // 次の問題では、前の問題の仕訳が残らない
+    await userEvent.click(screen.getByRole('button', { name: /次の問題/ }))
+    await screen.findByRole('button', { name: /採点する/ })
+    for (const input of screen.queryAllByRole('textbox')) expect(input).toHaveValue('')
+    for (const select of screen.queryAllByRole('combobox')) expect(select).toHaveValue('')
   })
 })
 
