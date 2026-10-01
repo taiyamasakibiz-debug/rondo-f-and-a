@@ -41,13 +41,18 @@ export function FreePage() {
         description="仕訳を記帳すると、B/S・P/L・キャッシュフローがその場で組み上がります。パネルは別ウィンドウでも開けます。"
       />
       <LedgerStatus>
-        {/* 左に入力（仕訳・科目）、右に結果（B/S・P/L・CF）。列ごとに上から詰めて、すき間を作らない */}
-        <div className="grid items-start gap-6 lg:grid-cols-2">
-          <div className="flex min-w-0 flex-col gap-6">
+        {/*
+          PC：左に入力（仕訳・科目）、右に結果（B/S・P/L・CF）。列ごとに上から詰めて、すき間を作らない。
+          スマホ：1 列。列の枠を外して（contents）並べ、科目マスターだけをいちばん下に回す
+        */}
+        <div className="grid items-start gap-6 lg:grid-cols-2 [&>*]:min-w-0">
+          <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
             <JournalPanel />
-            <AccountsPanel />
+            <div className="order-last min-w-0 lg:order-none">
+              <AccountsPanel />
+            </div>
           </div>
-          <div className="flex min-w-0 flex-col gap-6">
+          <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
             <BalanceSheetPanel />
             <IncomeStatementPanel />
             <CashFlowPanel />
