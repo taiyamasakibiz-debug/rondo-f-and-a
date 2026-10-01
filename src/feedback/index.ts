@@ -1,4 +1,11 @@
-import { getAudio, setBusVolume, unlockAudio } from './audio'
+import {
+  fadeOutAndSuspend,
+  getAudio,
+  peekAudio,
+  resumeAndFadeIn,
+  setBusVolume,
+  unlockAudio,
+} from './audio'
 import { type BgmPlayer, startBgm } from './bgm'
 import { useFeedbackPreferences } from './preferences'
 import { SOUNDS, type SoundName } from './sounds'
@@ -55,13 +62,18 @@ export function startFeedback(): () => void {
     // resume は非同期なので、動き始めてから BGM を確かめる
     void audio.context.resume().then(syncBgm, () => {})
   }
-  const onVisibility = () => {
-    const audio = getAudio()
-    if (!audio) return
-    // 見ていない間は音の処理を止める（電池の節約。BGM も止まる）
-    if (document.visibilityState === 'hidden') void audio.context.suspend().then(syncBgm, () => {})
-    else void audio.context.resume().then(syncBgm, () => {})
+  const onHide = () => {
+    if (!peekAudio()) return
+    // 見ていない間は音の処理を止める（電池の節約）。先に BGM の予約をやめ、音量を絞ってから止める
+    bgm?.stop()
+    bgm = null
+    void fadeOutAndSuspend().catch(() => {})
   }
+  const onShow = () => {
+    if (!peekAudio() || document.visibilityState !== 'visible') return
+    void resumeAndFadeIn().then(syncBgm, () => {})
+  }
+  const onVisibility = () => (document.visibilityState === 'hidden' ? onHide() : onShow())
   const unsubscribe = useFeedbackPreferences.subscribe(() => {
     applyVolumes()
     syncBgm()
@@ -70,10 +82,15 @@ export function startFeedback(): () => void {
   const events = ['pointerup', 'click', 'keydown'] as const
   for (const type of events) window.addEventListener(type, onGesture, { capture: true })
   document.addEventListener('visibilitychange', onVisibility)
+  // アプリを閉じるとき（iPhone のアプリの切り替えなど）
+  window.addEventListener('pagehide', onHide)
+  window.addEventListener('pageshow', onShow)
   return () => {
     unsubscribe()
     for (const type of events) window.removeEventListener(type, onGesture, { capture: true })
     document.removeEventListener('visibilitychange', onVisibility)
+    window.removeEventListener('pagehide', onHide)
+    window.removeEventListener('pageshow', onShow)
     bgm?.stop()
     bgm = null
   }

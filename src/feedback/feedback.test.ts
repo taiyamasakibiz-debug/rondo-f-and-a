@@ -101,3 +101,54 @@ describe('効果音と BGM の設定', () => {
     useFeedbackPreferences.getState().update(DEFAULT_PREFERENCES)
   })
 })
+
+describe('画面を離れるとき', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    Reflect.deleteProperty(window, 'AudioContext')
+  })
+
+  it('いきなり止めず、音量を絞りきってから止める（「ピー」と鳴らないように）', async () => {
+    vi.useFakeTimers()
+    const events: string[] = []
+    const param = (name: string) => ({
+      value: 1,
+      cancelScheduledValues() {},
+      setValueAtTime() {},
+      setTargetAtTime() {},
+      linearRampToValueAtTime(value: number) {
+        events.push(`${name}→${value}`)
+      },
+    })
+    const node = () => ({ connect: (target: unknown) => target })
+    class FakeAudioContext {
+      state = 'running'
+      currentTime = 0
+      sampleRate = 8000
+      destination = {}
+      createGain = () => ({ ...node(), gain: param('gain') })
+      createDynamicsCompressor = node
+      createConvolver = () => ({ ...node(), buffer: null })
+      createBuffer = (_: number, length: number) => ({
+        getChannelData: () => new Float32Array(length),
+      })
+      suspend = async () => {
+        events.push('suspend')
+        this.state = 'suspended'
+      }
+      resume = async () => {
+        this.state = 'running'
+      }
+    }
+    Object.defineProperty(window, 'AudioContext', { value: FakeAudioContext, configurable: true })
+    const { fadeOutAndSuspend, getAudio } = await import('./audio')
+    getAudio()
+
+    const done = fadeOutAndSuspend()
+    expect(events).toContain('gain→0')
+    expect(events).not.toContain('suspend')
+    await vi.advanceTimersByTimeAsync(200)
+    await done
+    expect(events.indexOf('gain→0')).toBeLessThan(events.indexOf('suspend'))
+  })
+})

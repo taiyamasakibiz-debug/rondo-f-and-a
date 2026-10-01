@@ -5,6 +5,8 @@
 
 type AudioGraph = {
   context: AudioContext
+  /** すべての音の出口。画面を離れるときに音量を絞る */
+  master: GainNode
   /** 効果音の出口（音量つき） */
   se: GainNode
   /** BGM の出口（音量つき） */
@@ -60,8 +62,42 @@ export function getAudio(): AudioGraph | null {
   bgm.connect(master)
   bgm.connect(reverbIn)
 
-  graph = { context, se, bgm, reverb: reverbIn }
+  graph = { context, master, se, bgm, reverb: reverbIn }
   return graph
+}
+
+/** 作ってあれば返す（まだ作っていなければ作らない） */
+export function peekAudio(): AudioGraph | null {
+  return graph
+}
+
+/** 絞りきるまでの時間（秒） */
+const FADE_SECONDS = 0.08
+
+/**
+ * 音の処理を止める。いきなり止めると、鳴っている途中の波が切れたり、
+ * 最後の音が繰り返されたりして「ピー」と鳴ることがあるので、先に音量を絞ってから止める。
+ */
+export async function fadeOutAndSuspend(): Promise<void> {
+  const audio = graph
+  if (!audio || audio.context.state !== 'running') return
+  const { context, master } = audio
+  master.gain.cancelScheduledValues(context.currentTime)
+  master.gain.setValueAtTime(master.gain.value, context.currentTime)
+  master.gain.linearRampToValueAtTime(0, context.currentTime + FADE_SECONDS)
+  await new Promise((resolve) => setTimeout(resolve, FADE_SECONDS * 1000 + 40))
+  if (context.state === 'running') await context.suspend()
+}
+
+/** 止めていた音の処理を再開し、音量を戻す */
+export async function resumeAndFadeIn(): Promise<void> {
+  const audio = graph
+  if (!audio) return
+  const { context, master } = audio
+  if (context.state !== 'running') await context.resume()
+  master.gain.cancelScheduledValues(context.currentTime)
+  master.gain.setValueAtTime(0, context.currentTime)
+  master.gain.linearRampToValueAtTime(1, context.currentTime + 0.3)
 }
 
 /** 最初のタップのときに呼ぶ（ブラウザは操作の中でしか音を出し始められない） */
