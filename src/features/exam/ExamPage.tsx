@@ -5,7 +5,7 @@ import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { generateProblem } from '@/engine/generate'
-import { type StepInput, gradeProblem } from '@/engine/grade'
+import { type StepInput, examScore, gradeProblem } from '@/engine/grade'
 import { randomSeed } from '@/engine/random'
 import { feedbackLater } from '@/feedback'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
@@ -83,6 +83,9 @@ function Exam({ tier }: { tier: Tier }) {
   }
 
   const eligibility = examEligibility(attempts, tier, settings, now)
+  const hasWritten = plan.items.some((item) =>
+    findTemplate(item.templateId)?.steps.some((step) => step.kind === 'written'),
+  )
   const unitNames = [
     ...new Set(
       plan.items.map((item) => unitOfTemplate(item.templateId)?.name).filter(Boolean) as string[],
@@ -106,6 +109,11 @@ function Exam({ tier }: { tier: Tier }) {
         </dl>
         <ul className="flex list-disc flex-col gap-1 pl-5 text-body-sm text-ink-body">
           <li>出題の範囲：{unitNames.join('・')}（単元をまたいで出ます）</li>
+          {hasWritten && (
+            <li>
+              記述の小問は、本番と同じく時間内に書きますが、自動の採点は目安なので、合否の計算には含めません。
+            </li>
+          )}
           <li>
             本番と同じく、解いている間は正解を表示しません。最後にまとめて採点結果を出します。
           </li>
@@ -162,13 +170,15 @@ function ExamRunner({
       if (submitting.current) return
       submitting.current = true
       const graded = gradeProblem(problem, inputs)
+      // 記述の小問はキーワードによる目安の採点なので、合否に使わない（得点と満点から外す）
+      const score = examScore(problem, graded)
       await recordAttempt({
         templateId: problem.template.id,
         topic: problem.template.topic,
         seed: problem.seed,
-        earned: graded.earned,
-        total: graded.total,
-        allCorrect: graded.allCorrect,
+        earned: score.earned,
+        total: score.total,
+        allCorrect: score.allCorrect,
         steps: graded.steps.map((step) => ({ stepId: step.stepId, correct: step.correct })),
         durationMs: Date.now() - startedAt,
         exam: {

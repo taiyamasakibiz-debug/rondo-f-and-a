@@ -1,5 +1,12 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { type StepInput, type StepResult, matchKeywords, writtenLength } from '@/engine/grade'
+import {
+  SELF_GRADE_RATIO,
+  type SelfGrade,
+  type StepInput,
+  type StepResult,
+  matchKeywords,
+  writtenLength,
+} from '@/engine/grade'
 import type { ChoiceStep, NumericStep, Params, StepTemplate, WrittenStep } from '@/engine/types'
 import { isNegative, toggleSign } from '@/engine/numbers'
 import { cn } from '@/lib/utils'
@@ -13,9 +20,22 @@ type StepCardProps = {
   input: StepInput | undefined
   onChange: (input: StepInput) => void
   result?: StepResult
+  /** 記述の自己採点（付けていなければ undefined） */
+  selfGrade?: SelfGrade
+  /** 記述の自己採点を付けたとき。渡さなければ、自己採点のボタンを出さない（認定テストなど） */
+  onSelfGrade?: (grade: SelfGrade) => void
 }
 
-export function StepCard({ index, step, params, input, onChange, result }: StepCardProps) {
+export function StepCard({
+  index,
+  step,
+  params,
+  input,
+  onChange,
+  result,
+  selfGrade,
+  onSelfGrade,
+}: StepCardProps) {
   const number = `Q${index + 1}`
   const inputId = `step-${step.id}`
   const points = step.points ?? 1
@@ -76,6 +96,8 @@ export function StepCard({ index, step, params, input, onChange, result }: StepC
               params={params}
               text={input?.kind === 'written' ? input.text : ''}
               result={result}
+              selfGrade={selfGrade}
+              onSelfGrade={onSelfGrade}
             />
           ) : (
             <StepResultRow result={result} index={index} />
@@ -311,11 +333,15 @@ function WrittenResultRow({
   params,
   text,
   result,
+  selfGrade,
+  onSelfGrade,
 }: {
   step: WrittenStep
   params: Params
   text: string
   result: StepResult
+  selfGrade?: SelfGrade
+  onSelfGrade?: (grade: SelfGrade) => void
 }) {
   const reduceMotion = useReducedMotion()
   const matches = matchKeywords(step, params, text)
@@ -337,9 +363,11 @@ function WrittenResultRow({
             result.correct ? 'text-correct-text' : 'text-incorrect-text',
           )}
         >
-          {result.invalidInput
-            ? '未回答'
-            : `${Math.round(result.earned * 10) / 10} / ${result.points} 点（キーワードによる目安）`}
+          {selfGrade
+            ? `${Math.round(result.earned * 10) / 10} / ${result.points} 点（自己採点 ${SELF_GRADE_MARK[selfGrade]}）`
+            : result.invalidInput
+              ? '未回答'
+              : `${Math.round(result.earned * 10) / 10} / ${result.points} 点（キーワードによる目安）`}
         </span>
         {result.hint && <span className="text-body-sm text-ink-body">{result.hint}</span>}
         <ul className="flex flex-wrap gap-2" aria-label="採点の観点">
@@ -362,10 +390,70 @@ function WrittenResultRow({
           <span className="text-[13px] font-bold tracking-[0.1em]">模範解答</span>
           <p className="text-body-sm text-ink-body">{result.expected}</p>
         </div>
-        <span className="text-caption text-ink-muted">
-          表現の違いは自動では判定しきれないので、模範解答と見比べて確かめてください。
-        </span>
+        {onSelfGrade ? (
+          <SelfGradeButtons points={result.points} selected={selfGrade} onSelect={onSelfGrade} />
+        ) : (
+          <span className="text-caption text-ink-muted">
+            表現の違いは自動では判定しきれないので、模範解答と見比べて確かめてください。
+          </span>
+        )}
       </div>
     </motion.div>
+  )
+}
+
+const SELF_GRADE_MARK: Record<SelfGrade, string> = { good: '〇', partial: '△', poor: '✕' }
+
+const SELF_GRADE_OPTIONS: readonly { grade: SelfGrade; label: string }[] = [
+  { grade: 'good', label: '書けた' },
+  { grade: 'partial', label: '一部書けた' },
+  { grade: 'poor', label: '書けなかった' },
+]
+
+/**
+ * 記述の自己採点のボタン。模範解答と見比べて選ぶと、キーワードによる目安の点を置き換える。
+ * 何度でも選び直せる
+ */
+function SelfGradeButtons({
+  points,
+  selected,
+  onSelect,
+}: {
+  points: number
+  selected?: SelfGrade
+  onSelect: (grade: SelfGrade) => void
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[13px] font-bold tracking-[0.1em]" id="self-grade-label">
+        模範解答と見比べて、自己採点
+      </span>
+      <div role="radiogroup" aria-labelledby="self-grade-label" className="flex flex-wrap gap-2">
+        {SELF_GRADE_OPTIONS.map(({ grade, label }) => {
+          const active = selected === grade
+          return (
+            <button
+              key={grade}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onSelect(grade)}
+              className={cn(
+                'rounded-pill border px-4 py-2 text-[13px] font-bold tracking-[0.05em] transition-colors',
+                active ? 'border-ink bg-ink text-on-ink' : 'border-line bg-paper hover:border-ink',
+              )}
+            >
+              {SELF_GRADE_MARK[grade]} {label}
+              <span className="ml-2 font-normal tabular-nums opacity-70">
+                {Math.round(points * SELF_GRADE_RATIO[grade] * 10) / 10} 点
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <span className="text-caption text-ink-muted">
+        キーワードによる目安の点は、表現の違いを判定しきれません。選ぶと、この小問の点を置き換えます（選び直せます）。
+      </span>
+    </div>
   )
 }

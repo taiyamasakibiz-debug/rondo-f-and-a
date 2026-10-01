@@ -65,6 +65,53 @@ export function gradeProblem(
   const steps = problem.template.steps.map((step) =>
     gradeStep(step, problem.params, inputs[step.id] ?? emptyInput(step)),
   )
+  return summarize(steps)
+}
+
+/**
+ * 記述の自己採点。模範解答と見比べて、本人が付ける。
+ * キーワードによる目安の点を置き換える：〇 = 満点、△ = 半分、✕ = 0 点
+ */
+export type SelfGrade = 'good' | 'partial' | 'poor'
+
+export const SELF_GRADE_RATIO: Record<SelfGrade, number> = { good: 1, partial: 0.5, poor: 0 }
+
+/** 記述の小問の自己採点を当てて、1 問の採点をやり直す */
+export function withSelfGrades(
+  result: ProblemResult,
+  grades: Readonly<Record<string, SelfGrade | undefined>>,
+): ProblemResult {
+  const steps = result.steps.map((step) => {
+    const grade = grades[step.stepId]
+    if (!grade) return step
+    return {
+      ...step,
+      earned: step.points * SELF_GRADE_RATIO[grade],
+      correct: grade === 'good',
+      hint: undefined,
+    }
+  })
+  return summarize(steps)
+}
+
+/**
+ * 認定テストの採点：記述の小問は目安の採点なので、合否に使わない（docs/COURSE.md §8）。
+ * 記述を除いた小問だけで、得点と満点を出す。記述しかない問題なら、記述も含めて数える
+ */
+export function examScore(
+  problem: Problem,
+  result: ProblemResult,
+): Pick<ProblemResult, 'earned' | 'total' | 'allCorrect'> {
+  const written = new Set(
+    problem.template.steps.filter((step) => step.kind === 'written').map((step) => step.id),
+  )
+  const counted = result.steps.filter((step) => !written.has(step.stepId))
+  const steps = counted.length > 0 ? counted : result.steps
+  const { earned, total, allCorrect } = summarize(steps)
+  return { earned, total, allCorrect }
+}
+
+function summarize(steps: StepResult[]): ProblemResult {
   const earned = steps.reduce((total, step) => total + step.earned, 0)
   const total = steps.reduce((total, step) => total + step.points, 0)
   return {

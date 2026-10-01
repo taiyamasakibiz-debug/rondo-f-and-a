@@ -12,7 +12,14 @@ export const attemptSchema = z.object({
   earned: z.number().nonnegative(),
   total: z.number().positive(),
   allCorrect: z.boolean(),
-  steps: z.array(z.object({ stepId: z.string(), correct: z.boolean() })),
+  steps: z.array(
+    z.object({
+      stepId: z.string(),
+      correct: z.boolean(),
+      /** 記述の自己採点（〇 good・△ partial・✕ poor）。付けていなければなし */
+      selfGrade: z.enum(['good', 'partial', 'poor']).optional(),
+    }),
+  ),
   durationMs: z.number().nonnegative(),
   /** 解答した日時（ISO 8601） */
   answeredAt: z.iso.datetime({ offset: true }),

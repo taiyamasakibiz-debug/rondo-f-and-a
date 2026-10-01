@@ -17,6 +17,15 @@ type ProgressState = {
   settings: Settings
   load(): Promise<void>
   recordAttempt(attempt: NewAttempt, now?: Date): Promise<Attempt>
+  /**
+   * 記録した解答の採点を直す（記述の自己採点など）。更新日時を今にするので、端末間の同期でも新しい方として伝わる。
+   * 見つからない（削除された）記録なら何もしない
+   */
+  updateAttemptScore(
+    id: string,
+    patch: Pick<Attempt, 'earned' | 'total' | 'allCorrect' | 'steps'>,
+    now?: Date,
+  ): Promise<void>
   updateSettings(patch: Partial<Omit<Settings, 'updatedAt'>>): Promise<void>
   /**
    * すべて置き換える（バックアップの読み込み用。形式の確認は src/data/backup.ts で行う）。
@@ -53,12 +62,17 @@ export function createProgressStore(repository: Repository, sync: SyncChannel = 
       enqueue(async () => {
         const data = await repository.load()
         const loadedIds = new Set(data.attempts.map((attempt) => attempt.id))
+        const current = new Map(get().attempts.map((attempt) => [attempt.id, attempt]))
+        // 保存がまだの記録は、新しく足したものも、更新したもの（自己採点など）も画面の値を残す
         const unsaved = get().attempts.filter(
           (attempt) => unsavedAttemptIds.has(attempt.id) && !loadedIds.has(attempt.id),
         )
+        const loaded = data.attempts.map((attempt) =>
+          unsavedAttemptIds.has(attempt.id) ? (current.get(attempt.id) ?? attempt) : attempt,
+        )
         set({
           status: 'ready',
-          attempts: [...data.attempts, ...unsaved],
+          attempts: [...loaded, ...unsaved],
           settings: unsavedSettings > 0 ? get().settings : data.settings,
         })
       })
@@ -101,6 +115,20 @@ export function createProgressStore(repository: Repository, sync: SyncChannel = 
         }
         sync.notify('progress')
         return attempt
+      },
+
+      async updateAttemptScore(id, patch, now = new Date()) {
+        const current = get().attempts.find((attempt) => attempt.id === id && !attempt.deletedAt)
+        if (!current) return
+        const attempt: Attempt = { ...current, ...patch, updatedAt: now.toISOString() }
+        unsavedAttemptIds.add(id)
+        set({ attempts: get().attempts.map((a) => (a.id === id ? attempt : a)) })
+        try {
+          await enqueue(() => repository.putAttempt(attempt))
+        } finally {
+          unsavedAttemptIds.delete(id)
+        }
+        sync.notify('progress')
       },
 
       async updateSettings(patch) {

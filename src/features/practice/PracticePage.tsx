@@ -1,11 +1,17 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { type Problem, generateProblem } from '@/engine/generate'
-import { type ProblemResult, type StepInput, gradeProblem } from '@/engine/grade'
+import {
+  type ProblemResult,
+  type SelfGrade,
+  type StepInput,
+  gradeProblem,
+  withSelfGrades,
+} from '@/engine/grade'
 import { createRandom, randomSeed } from '@/engine/random'
 import { useDaily } from '@/features/daily/useDaily'
 import { feedback } from '@/feedback'
@@ -16,6 +22,7 @@ import { dailyPracticePath } from '@/progress/daily'
 import { levelFromXp, topicProgress } from '@/progress/level'
 import { nextAttemptXp } from '@/progress/xp'
 import { useProgressStore } from '@/progress/store'
+import type { Attempt } from '@/progress/types'
 import { computeStreak } from '@/progress/streak'
 import { AnswerFeedback } from './AnswerFeedback'
 import { type Reward, RewardPanel } from './Rewards'
@@ -71,7 +78,13 @@ function Practice({
   const recordAttempt = useProgressStore((state) => state.recordAttempt)
   const [problem, setProblem] = useState(() => initial ?? newProblem(topic))
   const [inputs, setInputs] = useState<Record<string, StepInput>>({})
+  // キーワードによる目安の採点（自己採点を当てる前）
   const [result, setResult] = useState<ProblemResult | null>(null)
+  // 記述の自己採点（小問の id ごと）
+  const [selfGrades, setSelfGrades] = useState<Record<string, SelfGrade>>({})
+  // 保存した記録（自己採点で、保存した記録を直すため）
+  const [saved, setSaved] = useState<Attempt | null>(null)
+
   const [reward, setReward] = useState<Reward | null>(null)
   const [saveError, setSaveError] = useState(false)
   const [startedAt, setStartedAt] = useState(() => Date.now())
@@ -79,6 +92,28 @@ function Practice({
   const [round, setRound] = useState(0)
   const navigate = useNavigate()
   const daily = useDaily()
+
+  // 自己採点が変わったら、保存した記録の採点を直す（保存の前に付けた自己採点も、保存のあとに反映する）
+  useEffect(() => {
+    if (!saved || !result || Object.keys(selfGrades).length === 0) return
+    const regraded = withSelfGrades(result, selfGrades)
+    useProgressStore
+      .getState()
+      .updateAttemptScore(saved.id, {
+        earned: regraded.earned,
+        total: regraded.total,
+        allCorrect: regraded.allCorrect,
+        steps: regraded.steps.map((step) => ({
+          stepId: step.stepId,
+          correct: step.correct,
+          ...(selfGrades[step.stepId] ? { selfGrade: selfGrades[step.stepId] } : {}),
+        })),
+      })
+      .catch((error: unknown) => {
+        console.error('自己採点の保存に失敗しました', error)
+        setSaveError(true)
+      })
+  }, [saved, result, selfGrades])
 
   if (!problem) {
     return (
@@ -92,10 +127,19 @@ function Practice({
   }
 
   const { template, params } = problem
+  const shown = result && withSelfGrades(result, selfGrades)
+
+  /** 記述の自己採点（記録は上の effect で直す） */
+  const handleSelfGrade = (stepId: string, grade: SelfGrade) => {
+    setSelfGrades((prev) => ({ ...prev, [stepId]: grade }))
+  }
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     // 採点済みなら、もう一度記録しない（入力欄で Enter を押したときなど）
     if (result) return
+    // 採点した時刻。所要時間とストリークの判定は、この時刻でそろえる
+    const submittedAt = new Date()
     const graded = gradeProblem(problem, inputs)
     setResult(graded)
     // 採点の瞬間の手応え（効果音）。ボタンを押した操作の中で鳴らす
@@ -104,29 +148,35 @@ function Practice({
 
     const store = useProgressStore.getState()
     const before = topicProgress(store.attempts, topic)
-    const streakBefore = computeStreak(store.attempts, store.settings, new Date())
+    const streakBefore = computeStreak(store.attempts, store.settings, submittedAt)
     const xp = nextAttemptXp(store.attempts, {
       templateId: template.id,
       earned: graded.earned,
       total: graded.total,
       allCorrect: graded.allCorrect,
-      answeredAt: new Date().toISOString(),
+      answeredAt: submittedAt.toISOString(),
     })
     setReward({ xp, before, after: levelFromXp(before.xp + xp) })
-    try {
-      await recordAttempt({
-        templateId: template.id,
-        topic,
-        seed: problem.seed,
-        earned: graded.earned,
-        total: graded.total,
-        allCorrect: graded.allCorrect,
-        steps: graded.steps.map((step) => ({ stepId: step.stepId, correct: step.correct })),
-        durationMs: Date.now() - startedAt,
-      })
+    const saving = recordAttempt({
+      templateId: template.id,
+      topic,
+      seed: problem.seed,
+      earned: graded.earned,
+      total: graded.total,
+      allCorrect: graded.allCorrect,
+      steps: graded.steps.map((step) => ({ stepId: step.stepId, correct: step.correct })),
+      durationMs: submittedAt.getTime() - startedAt,
+    }).catch((error: unknown) => {
+      console.error('解答記録の保存に失敗しました', error)
+      setSaveError(true)
+      return null
+    })
+    const attempt = await saving
+    if (attempt) {
+      setSaved(attempt)
       // この 1 問で今日のノルマを達成したら、ストリークが伸びた演出を出す
       const after = useProgressStore.getState()
-      const streakAfter = computeStreak(after.attempts, after.settings, new Date())
+      const streakAfter = computeStreak(after.attempts, after.settings, submittedAt)
       if (!streakBefore.todayGoalMet && streakAfter.todayGoalMet) {
         setReward((prev) =>
           prev
@@ -134,9 +184,6 @@ function Practice({
             : prev,
         )
       }
-    } catch (error) {
-      console.error('解答記録の保存に失敗しました', error)
-      setSaveError(true)
     }
   }
   // デイリーから開いたときは、今日のデイリーの何問目か（デイリーにない問題なら -1）
@@ -161,6 +208,8 @@ function Practice({
     setProblem(newProblem(topic))
     setInputs({})
     setResult(null)
+    setSelfGrades({})
+    setSaved(null)
     setReward(null)
     setSaveError(false)
     setStartedAt(Date.now())
@@ -178,12 +227,14 @@ function Practice({
       <PageHeader title={lab.nameEn} subtitle={template.title} />
 
       <div className="flex flex-col gap-12">
-        {result && (
+        {shown && (
           <AnswerFeedback
-            correct={result.allCorrect}
-            title={result.allCorrect ? '全問正解' : `${result.earned} / ${result.total} 点`}
+            correct={shown.allCorrect}
+            title={
+              shown.allCorrect ? '全問正解' : `${formatPoints(shown.earned)} / ${shown.total} 点`
+            }
           >
-            {result.allCorrect
+            {shown.allCorrect
               ? 'すべてのステップが正解です。'
               : '間違えたステップの正解と解説を確認します。'}
           </AnswerFeedback>
@@ -206,7 +257,9 @@ function Practice({
               params={params}
               input={inputs[step.id]}
               onChange={(input) => setInputs((prev) => ({ ...prev, [step.id]: input }))}
-              result={result?.steps.find((r) => r.stepId === step.id)}
+              result={shown?.steps.find((r) => r.stepId === step.id)}
+              selfGrade={selfGrades[step.id]}
+              onSelfGrade={(grade) => handleSelfGrade(step.id, grade)}
             />
           ))}
 
@@ -242,4 +295,9 @@ function Practice({
       </div>
     </>
   )
+}
+
+/** 点数の表示（記述の部分点などで小数になるときは、小数第 1 位まで） */
+function formatPoints(value: number): string {
+  return String(Math.round(value * 10) / 10)
 }

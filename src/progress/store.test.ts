@@ -120,3 +120,45 @@ describe('ほかの端末からの取り込み（mergeRemote）', () => {
     expect(liveAttempts(store.getState().attempts)).toEqual([])
   })
 })
+
+describe('記録した解答の採点を直す（updateAttemptScore）', () => {
+  it('採点を直して保存し、更新日時を新しくする', async () => {
+    const repository = createMemoryRepository()
+    const store = createProgressStore(repository)
+    await store.getState().load()
+    const recorded = await store
+      .getState()
+      .recordAttempt(newAttempt, new Date('2026-10-01T03:00:00Z'))
+    await store.getState().updateAttemptScore(
+      recorded.id,
+      {
+        earned: 5,
+        total: 5,
+        allCorrect: true,
+        steps: [{ stepId: 'a', correct: true, selfGrade: 'good' }],
+      },
+      new Date('2026-10-01T03:05:00Z'),
+    )
+    const [updated] = store.getState().attempts
+    expect(updated).toMatchObject({
+      id: recorded.id,
+      earned: 5,
+      allCorrect: true,
+      answeredAt: recorded.answeredAt,
+      updatedAt: '2026-10-01T03:05:00.000Z',
+    })
+    expect(updated!.steps[0]!.selfGrade).toBe('good')
+    // 保存先にも反映されている
+    const saved = await repository.load()
+    expect(saved.attempts[0]).toMatchObject({ earned: 5, updatedAt: '2026-10-01T03:05:00.000Z' })
+  })
+
+  it('見つからない記録なら何もしない', async () => {
+    const store = createProgressStore(createMemoryRepository())
+    await store.getState().load()
+    await store
+      .getState()
+      .updateAttemptScore('missing', { earned: 1, total: 1, allCorrect: true, steps: [] })
+    expect(store.getState().attempts).toEqual([])
+  })
+})

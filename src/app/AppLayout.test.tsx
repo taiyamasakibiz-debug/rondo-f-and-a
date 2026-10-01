@@ -220,6 +220,37 @@ describe('フリーモード', () => {
   })
 })
 
+describe('記述の自己採点', () => {
+  it('採点のあと、模範解答と見比べて自己採点すると、点と記録が直る', async () => {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().load()
+    await useProgressStore.getState().resetAll()
+    await renderAt('/labs/analysis/practice?template=analysis.compare-peer&seed=1')
+
+    // 選択は答えず、記述だけ書いて採点する（選択 2 点・記述 2 点）
+    await userEvent.type(await screen.findByRole('textbox'), '収益性が低い')
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+    expect(await screen.findByText(/点（キーワードによる目安）/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('radio', { name: /〇 書けた/ }))
+    expect(await screen.findByText(/自己採点 〇/)).toBeInTheDocument()
+    expect(screen.getAllByRole('status')[0]).toHaveTextContent('2 / 4 点')
+    await vi.waitFor(() => {
+      const [attempt] = liveAttempts(useProgressStore.getState().attempts)
+      expect(attempt).toMatchObject({ earned: 2, total: 4 })
+      expect(attempt!.steps.find((step) => step.selfGrade)?.selfGrade).toBe('good')
+    })
+
+    // 選び直せる
+    await userEvent.click(screen.getByRole('radio', { name: /✕ 書けなかった/ }))
+    await vi.waitFor(() => {
+      const [attempt] = liveAttempts(useProgressStore.getState().attempts)
+      expect(attempt).toMatchObject({ earned: 0 })
+    })
+    await useProgressStore.getState().resetAll()
+  })
+})
+
 describe('学習スケジュールの設定', () => {
   it('今の局面が出て、目標の月を変えると局面が変わる', async () => {
     const { useProgressStore } = await import('@/progress/store')
