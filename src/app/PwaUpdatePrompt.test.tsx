@@ -28,3 +28,23 @@ describe('PwaUpdatePrompt', () => {
     expect(setNeedRefresh).toHaveBeenCalledWith(false)
   })
 })
+
+describe('watchForUpdates', () => {
+  it('画面に戻ってきたときと、30 分ごとに新しい版を確かめる', async () => {
+    vi.useFakeTimers()
+    const { watchForUpdates } = await import('./watchForUpdates')
+    const update = vi.fn().mockResolvedValue(undefined)
+    const stop = watchForUpdates({ update } as unknown as ServiceWorkerRegistration)
+    try {
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(update).toHaveBeenCalledTimes(1)
+      vi.advanceTimersByTime(30 * 60 * 1000)
+      expect(update).toHaveBeenCalledTimes(2)
+    } finally {
+      stop()
+      vi.useRealTimers()
+    }
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(update).toHaveBeenCalledTimes(2)
+  })
+})

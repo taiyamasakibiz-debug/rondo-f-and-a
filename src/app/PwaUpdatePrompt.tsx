@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/button'
+import { watchForUpdates } from './watchForUpdates'
 
 // v1 は Service Worker のキャッシュが古いまま残りやすかったため、
 // 新しい版が届いたら知らせて、ユーザーの操作で切り替える
@@ -8,7 +9,11 @@ export function PwaUpdatePrompt() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW()
+  } = useRegisterSW({
+    onRegisteredSW(_url, registration) {
+      if (registration) watchForUpdates(registration)
+    },
+  })
 
   return (
     <AnimatePresence>
