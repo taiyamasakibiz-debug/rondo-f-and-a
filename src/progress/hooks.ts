@@ -6,6 +6,7 @@ import { useProgressStore } from './store'
 import { computeStreak } from './streak'
 import { dayKey } from './day'
 import { phaseSummary } from './phase'
+import { studyForecast } from './timing'
 import { computeCourse } from './units'
 
 /**
@@ -55,4 +56,16 @@ export function usePhase() {
   const settings = useProgressStore((state) => state.settings)
   const now = useNow()
   return useMemo(() => phaseSummary(dayKey(now, settings.dayStartHour), settings), [now, settings])
+}
+
+/** 学習時間の見込み（定着していない単元を、目安の回数まで解くのにかかる時間と、1 週間あたりの時間） */
+export function useStudyForecast() {
+  const attempts = useProgressStore((state) => state.attempts)
+  const settings = useProgressStore((state) => state.settings)
+  const course = useCourse()
+  const now = useNow()
+  return useMemo(
+    () => studyForecast(course, attempts, settings, now),
+    [course, attempts, settings, now],
+  )
 }

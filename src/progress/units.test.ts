@@ -44,6 +44,7 @@ const WITH_PREPARING: Unit[] = [
     prerequisites: [],
     templateIds: [],
     expectedMinutes: 3,
+    targetAttempts: 10,
   },
   {
     id: 'after-new-unit',
@@ -53,6 +54,7 @@ const WITH_PREPARING: Unit[] = [
     prerequisites: ['new-unit'],
     templateIds: ['cvp.break-even.basic'],
     expectedMinutes: 3,
+    targetAttempts: 10,
   },
 ]
 /** CVP の全型を day の日に 1 回ずつ解いた記録 */

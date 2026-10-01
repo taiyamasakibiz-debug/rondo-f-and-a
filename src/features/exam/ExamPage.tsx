@@ -14,7 +14,7 @@ import { Mark } from '@/features/practice/Mark'
 import { ProblemBlocks } from '@/features/practice/ProblemBlocks'
 import { StepCard } from '@/features/practice/StepCard'
 import { unitOfTemplate } from '@/course/units'
-import { findTemplate } from '@/problems'
+import { PROBLEM_TEMPLATES, findTemplate } from '@/problems'
 import {
   type ExamPlan,
   TIERS,
@@ -25,6 +25,7 @@ import {
   examResults,
 } from '@/progress/certification'
 import { useNow } from '@/progress/hooks'
+import { expectedMinutesFor } from '@/progress/timing'
 import { useProgressStore } from '@/progress/store'
 import { CertifiedCard } from './CertifiedCard'
 
@@ -45,8 +46,13 @@ function Exam({ tier }: { tier: Tier }) {
   const now = useNow()
   const [session, setSession] = useState<Session | null>(null)
   const [finished, setFinished] = useState(false)
-  // 始める前に出題を決めておき、制限時間と出題の範囲を見せる
-  const [plan] = useState(() => buildExam(tier, randomSeed()))
+  // 始める前に出題を決めておき、制限時間と出題の範囲を見せる。
+  // 制限時間は、実測で補正した想定時間から出すので、記録を読み込んだら計算し直す（始めたら session に固定される）
+  const [seed] = useState(randomSeed)
+  const plan = useMemo(
+    () => buildExam(tier, seed, PROBLEM_TEMPLATES, expectedMinutesFor(attempts)),
+    [tier, seed, attempts],
+  )
 
   const start = () => {
     setSession({ id: crypto.randomUUID(), startedAt: new Date().toISOString(), plan })

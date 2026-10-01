@@ -11,7 +11,9 @@ import {
   examEligibility,
   examResults,
 } from '@/progress/certification'
+import { PROBLEM_TEMPLATES } from '@/problems'
 import { useNow } from '@/progress/hooks'
+import { expectedMinutesFor } from '@/progress/timing'
 import { useProgressStore } from '@/progress/store'
 import { CertBadge } from './CertBadge'
 
@@ -32,7 +34,10 @@ export function StageCertification({ tier }: { tier: Tier }) {
       .map((result) => Math.round(result.ratio * 100)),
   )
   // 一覧に出す制限時間の目安。実際の時間は、出題が決まったとき（テストの画面）に決まる
-  const minutes = useMemo(() => buildExam(tier, 0).timeLimitMs / 60_000, [tier])
+  const minutes = useMemo(
+    () => buildExam(tier, 0, PROBLEM_TEMPLATES, expectedMinutesFor(attempts)).timeLimitMs / 60_000,
+    [tier, attempts],
+  )
 
   if (status === 'loading') return null
   return (

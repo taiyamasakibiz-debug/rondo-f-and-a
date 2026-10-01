@@ -6,7 +6,13 @@ import { PageHeader } from '@/components/PageHeader'
 import { LABS, type Lab, findLab } from '@/features/labs/labs'
 import { findTemplate } from '@/problems'
 import { StageCertification } from '@/features/exam/StageCertification'
-import { useCourse, usePhase, useStreak, useTopicProgress } from '@/progress/hooks'
+import {
+  useCourse,
+  usePhase,
+  useStreak,
+  useStudyForecast,
+  useTopicProgress,
+} from '@/progress/hooks'
 import { PHASE_LABELS } from '@/progress/phase'
 import type { StageProgress, UnitProgress, UnitState } from '@/progress/units'
 import { MAX_FREEZES } from '@/progress/streak'
@@ -114,6 +120,7 @@ function StateTag({ state }: { state: UnitState }) {
 function CourseSection() {
   const course = useCourse()
   const phase = usePhase()
+  const forecast = useStudyForecast()
   const current = course.stages.find((entry) => entry.stage.id === course.currentStage)
 
   return (
@@ -148,6 +155,14 @@ function CourseSection() {
             今は{PHASE_LABELS[phase.phase].name}（{PHASE_LABELS[phase.phase].description}）
             {phase.daysLeft !== null && `。あと ${phase.daysLeft} 日`}
           </p>
+          {forecast.remainingMinutes > 0 && (
+            <p className="text-caption text-ink-muted">
+              残りの単元を目安の回数まで解くと、約 {formatHours(forecast.remainingMinutes)}
+              {forecast.minutesPerWeek !== null &&
+                `。マスターしたい月の末までに終えるには、1 週間に約 ${formatHours(forecast.minutesPerWeek)}`}
+              （復習・解説・認定テストの分を含む。想定時間は、実際に解いた時間で補正）
+            </p>
+          )}
           <p className="text-caption text-ink-muted">
             レベルは、一度定着した単元の点で決まります。要復習になっても下がりません。
           </p>
@@ -223,6 +238,14 @@ function UnitRow({ progress }: { progress: UnitProgress }) {
       </div>
     </li>
   )
+}
+
+/** 分を「◯ 時間 ◯ 分」に（1 時間未満なら分だけ） */
+function formatHours(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const rest = Math.round(minutes % 60)
+  if (hours === 0) return `${rest} 分`
+  return rest === 0 ? `${hours} 時間` : `${hours} 時間 ${rest} 分`
 }
 
 /** Tessera の KEY NUMBER カード（白地に 1px の線） */

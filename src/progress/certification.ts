@@ -1,4 +1,4 @@
-import { type StageId, findUnit } from '@/course/units'
+import { type StageId, type Unit, findUnit } from '@/course/units'
 import { createRandom } from '@/engine/random'
 import type { ProblemTemplate } from '@/engine/types'
 import { PROBLEM_TEMPLATES } from '@/problems'
@@ -85,12 +85,15 @@ export type ExamPlan = {
 /**
  * テストの問題と制限時間を決める。同じシードなら同じ問題になる。
  * 枠ごとに単元を決め、その単元の問題から、まだ使っていないもの・難易度が目安に近いものを選ぶ。
+ * 制限時間は、出題した単元の想定時間の合計 × 係数（5 分単位）。
  * 問題のある単元が枠より少ないときは、最初の枠から順に使い回す（数値は変わる）。
  */
 export function buildExam(
   tier: Tier,
   examSeed: number,
   templates: readonly ProblemTemplate[] = PROBLEM_TEMPLATES,
+  /** 単元ごとの想定時間（分）。実測で補正した値を渡す（src/progress/timing.ts）。省略すると設計値 */
+  minutesOf: (unit: Unit) => number = (unit) => unit.expectedMinutes,
 ): ExamPlan {
   const rule = TIER_RULES[tier]
   const random = createRandom(examSeed)
@@ -119,7 +122,7 @@ export function buildExam(
     )
     const template = pool[0]!
     used.set(template.id, (used.get(template.id) ?? 0) + 1)
-    minutes += findUnit(unitId)!.expectedMinutes
+    minutes += minutesOf(findUnit(unitId)!)
     return { templateId: template.id, seed: Math.floor(random.next() * 4294967296) }
   })
 

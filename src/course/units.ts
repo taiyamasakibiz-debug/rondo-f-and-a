@@ -47,8 +47,10 @@ export type Unit = {
   prerequisites: readonly string[]
   /** この単元の問題テンプレート。空の単元は「準備中」 */
   templateIds: readonly string[]
-  /** 1 問あたりの想定時間（分）。設計値 */
+  /** 1 問あたりの想定時間（分）。設計値。実測で補正した値は src/progress/timing.ts */
   expectedMinutes: number
+  /** 定着までの目安の解答回数（docs/COURSE.md §3.2）。学習時間の見込みに使う */
+  targetAttempts: number
 }
 
 export const UNITS: readonly Unit[] = [
@@ -67,6 +69,7 @@ export const UNITS: readonly Unit[] = [
       'journal.bad-debt-write-off',
     ],
     expectedMinutes: 3,
+    targetAttempts: 12,
   },
   {
     id: 'acc-ca',
@@ -82,6 +85,7 @@ export const UNITS: readonly Unit[] = [
       'analysis.receivable-turnover-days',
     ],
     expectedMinutes: 4,
+    targetAttempts: 25,
   },
   {
     id: 'acc-cf',
@@ -96,6 +100,7 @@ export const UNITS: readonly Unit[] = [
       'cf.investing-financing',
     ],
     expectedMinutes: 5,
+    targetAttempts: 20,
   },
   {
     id: 'mgt-cvp',
@@ -112,6 +117,7 @@ export const UNITS: readonly Unit[] = [
       'cvp.bottleneck-mix',
     ],
     expectedMinutes: 5,
+    targetAttempts: 25,
   },
   {
     id: 'fin-tvm',
@@ -121,6 +127,7 @@ export const UNITS: readonly Unit[] = [
     prerequisites: ['acc-bs-pl'],
     templateIds: ['tvm.payment-plans', 'tvm.perpetuity'],
     expectedMinutes: 3,
+    targetAttempts: 12,
   },
   {
     id: 'fin-npv',
@@ -136,6 +143,7 @@ export const UNITS: readonly Unit[] = [
       'npv.mutually-exclusive',
     ],
     expectedMinutes: 7,
+    targetAttempts: 35,
   },
   {
     id: 'mgt-seg',
@@ -145,6 +153,7 @@ export const UNITS: readonly Unit[] = [
     prerequisites: ['mgt-cvp'],
     templateIds: ['seg.store-closure', 'seg.special-order'],
     expectedMinutes: 5,
+    targetAttempts: 15,
   },
   {
     id: 'fin-val',
@@ -154,6 +163,7 @@ export const UNITS: readonly Unit[] = [
     prerequisites: ['fin-npv'],
     templateIds: ['val.wacc', 'val.dcf', 'val.ev-ebitda'],
     expectedMinutes: 6,
+    targetAttempts: 15,
   },
   {
     id: 'fin-fx',
@@ -163,6 +173,7 @@ export const UNITS: readonly Unit[] = [
     prerequisites: ['fin-tvm'],
     templateIds: ['fx.forward-contract', 'fx.currency-option'],
     expectedMinutes: 5,
+    targetAttempts: 10,
   },
   {
     id: 'case4-int',
@@ -177,6 +188,7 @@ export const UNITS: readonly Unit[] = [
       'case4.replacement-funding',
     ],
     expectedMinutes: 12,
+    targetAttempts: 15,
   },
 ]
 
