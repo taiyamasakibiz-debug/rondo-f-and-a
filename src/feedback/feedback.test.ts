@@ -125,3 +125,34 @@ describe('振動', () => {
     expect(vibrate).not.toHaveBeenCalled()
   })
 })
+
+describe('振動（iPhone）', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+    Reflect.deleteProperty(window, 'matchMedia')
+  })
+
+  it('Vibration API がなければ、見えないスイッチを押す（1 回目はその場で）', () => {
+    vi.useFakeTimers()
+    Object.defineProperty(window, 'matchMedia', {
+      value: () => ({ matches: true }),
+      configurable: true,
+    })
+    const clicks: HTMLLabelElement[] = []
+    vi.spyOn(HTMLLabelElement.prototype, 'click').mockImplementation(function (
+      this: HTMLLabelElement,
+    ) {
+      clicks.push(this)
+      expect(this.querySelector('input[type=checkbox][switch]')).not.toBeNull()
+      expect(this.isConnected).toBe(true)
+    })
+
+    feedback('levelUp')
+    expect(clicks).toHaveLength(1)
+    vi.advanceTimersByTime(1000)
+    expect(clicks).toHaveLength(3)
+    // 使い終わったスイッチは残さない
+    expect(document.querySelectorAll('input[switch]')).toHaveLength(0)
+  })
+})

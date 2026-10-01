@@ -17,30 +17,34 @@ export const PATTERNS: Record<SoundName, number[]> = {
   failed: [24],
 }
 
-function isIos(): boolean {
-  return /iPhone|iPad|iPod/.test(navigator.userAgent)
+/** iPhone で続けて振動させるときの間隔 */
+const SWITCH_INTERVAL_MS = 100
+
+/** Vibration API がなく、指で操作する端末（iPhone・iPad） */
+function canUseSwitchHaptics(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
 }
 
-let iosSwitch: HTMLLabelElement | null = null
-
-function tickIos() {
-  if (!iosSwitch) {
-    const label = document.createElement('label')
-    label.setAttribute('aria-hidden', 'true')
-    label.style.cssText =
-      'position:fixed;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;'
-    const input = document.createElement('input')
-    input.type = 'checkbox'
-    input.setAttribute('switch', '')
-    input.tabIndex = -1
-    label.append(input)
-    document.body.append(label)
-    iosSwitch = label
+/**
+ * iOS の Safari は、スイッチ（<input type="checkbox" switch>）が切り替わると短く振動する。
+ * 見えないスイッチを作ってラベルを押し、すぐ取り除く。
+ * タップの処理の中から「同期的に」呼ばないと振動しないので、setTimeout などを挟まない。
+ */
+function tickSwitch() {
+  const label = document.createElement('label')
+  label.setAttribute('aria-hidden', 'true')
+  label.style.display = 'none'
+  const input = document.createElement('input')
+  input.type = 'checkbox'
+  input.setAttribute('switch', '')
+  label.append(input)
+  // body に置くとフォーカスが動いてキーボードが閉じることがあるので、head に置く
+  document.head.append(label)
+  try {
+    label.click()
+  } finally {
+    label.remove()
   }
-  // スイッチにフォーカスが移ってキーボードが閉じたりしないよう、元に戻す
-  const active = document.activeElement
-  iosSwitch.click()
-  if (active instanceof HTMLElement && document.activeElement !== active) active.focus()
 }
 
 export function vibrate(name: SoundName): void {
@@ -49,11 +53,10 @@ export function vibrate(name: SoundName): void {
     navigator.vibrate(pattern)
     return
   }
-  if (!isIos()) return
-  // 振動する部分（偶数番目）の数だけ、間をあけて鳴らす
-  let delay = 0
-  pattern.forEach((ms, i) => {
-    if (i % 2 === 0) setTimeout(tickIos, delay)
-    delay += ms + (i % 2 === 0 ? 40 : 0)
-  })
+  if (!canUseSwitchHaptics()) return
+  // 振動する部分（偶数番目）の数だけ鳴らす。1 回目はタップの処理の中ですぐに鳴らし、
+  // 2 回目からは間をあける（近すぎると 1 回にまとまってしまう）
+  const pulses = Math.ceil(pattern.length / 2)
+  tickSwitch()
+  for (let i = 1; i < pulses; i += 1) setTimeout(tickSwitch, i * SWITCH_INTERVAL_MS)
 }
