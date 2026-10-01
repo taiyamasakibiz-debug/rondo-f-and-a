@@ -4,6 +4,7 @@
 数値を変えて何度でも解ける問題を、その場で採点し、間違えた原因まで返す。
 
 - 設計：[`docs/DESIGN.md`](docs/DESIGN.md)
+- 学習コース・レベル・認定の設計：[`docs/COURSE.md`](docs/COURSE.md)
 - デザインシステム（Tessera）のルール：[`docs/design-system/README.md`](docs/design-system/README.md)
 - 問題の下書きを NotebookLM で作るプロンプト：[`docs/prompts/notebooklm-problem-draft.md`](docs/prompts/notebooklm-problem-draft.md)
 

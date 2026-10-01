@@ -6,7 +6,9 @@ import { PageHeader } from '@/components/PageHeader'
 import { LABS, type Lab, findLab } from '@/features/labs/labs'
 import { findTemplate } from '@/problems'
 import { CertBadge } from '@/features/exam/CertBadge'
-import { useCertification, useStreak, useTopicProgress } from '@/progress/hooks'
+import { TIER_RULES } from '@/progress/certification'
+import { useCertification, useCourse, useStreak, useTopicProgress } from '@/progress/hooks'
+import type { StageProgress, UnitProgress, UnitState } from '@/progress/units'
 import { MAX_FREEZES } from '@/progress/streak'
 import { useProgressStore } from '@/progress/store'
 import type { Attempt } from '@/progress/types'
@@ -24,6 +26,7 @@ export function RecordsPage() {
       ) : (
         <div className="flex flex-col gap-16">
           <StreakSection />
+          <CourseSection />
           <LevelsSection />
           <MistakesSection />
         </div>
@@ -80,6 +83,127 @@ function StreakSection() {
   )
 }
 
+const PRIORITY_LABEL = { must: null, recommended: '推奨', later: '後回し' } as const
+
+const STATE_LABEL: Record<UnitState, string> = {
+  preparing: '準備中',
+  untouched: '未着手',
+  learning: '学習中',
+  consolidated: '定着',
+  review: '要復習',
+}
+
+/** 状態のピル。色だけに頼らず、文字で示す（オレンジは「要復習」の点だけ） */
+function StateTag({ state }: { state: UnitState }) {
+  return (
+    <span
+      className={
+        state === 'consolidated'
+          ? 'inline-flex items-center gap-2 rounded-pill border border-ink bg-ink px-3 py-1 text-[11px] font-bold tracking-[0.1em] text-on-ink'
+          : state === 'learning' || state === 'review'
+            ? 'inline-flex items-center gap-2 rounded-pill border border-ink px-3 py-1 text-[11px] font-bold tracking-[0.1em]'
+            : 'inline-flex items-center gap-2 rounded-pill border border-line px-3 py-1 text-[11px] font-bold tracking-[0.1em] text-ink-muted'
+      }
+    >
+      {state === 'review' && <span className="size-2 rounded-pill bg-ember" aria-hidden />}
+      {STATE_LABEL[state]}
+    </span>
+  )
+}
+
+function CourseSection() {
+  const course = useCourse()
+  const current = course.stages.find((entry) => entry.stage.id === course.currentStage)
+
+  return (
+    <section>
+      <SectionHeading number="02" en="Course" ja="学習コース" />
+      <div className="mb-6 rounded-md bg-fog p-6">
+        {course.nextUnit && current ? (
+          <p className="font-ja text-[15px] tracking-ja">
+            いまは <strong>Stage {current.stage.id}</strong>。次は{' '}
+            <strong>{course.nextUnit.unit.name}</strong>
+            {course.nextUnit.state === 'learning' ? 'のつづき' : 'から'}です。
+          </p>
+        ) : (
+          <p className="font-ja text-[15px] tracking-ja">
+            {current
+              ? `Stage ${current.stage.id} の単元を、間を空けて解き直すと定着になります。`
+              : 'いま取り組める単元は、すべて定着しました。'}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col gap-10">
+        {course.stages.map((entry) => (
+          <StageBlock key={entry.stage.id} entry={entry} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function StageBlock({ entry }: { entry: StageProgress }) {
+  const { stage, gateUnits, consolidatedCount, cleared } = entry
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h3 className="flex items-baseline gap-4">
+          <span className="text-[13px] font-bold tracking-caps text-ink-muted">
+            STAGE {stage.id}
+          </span>
+          <span className="font-ja text-[18px] font-bold tracking-ja">{stage.name}</span>
+        </h3>
+        <span className="text-caption text-ink-muted tabular-nums">
+          {gateUnits.length === 0
+            ? '問題を準備中'
+            : `${consolidatedCount} / ${gateUnits.length} 定着`}
+          <span className="ml-3">
+            {cleared
+              ? `${TIER_RULES[stage.tier].label}認定を受けられます`
+              : `修了で${TIER_RULES[stage.tier].label}認定`}
+          </span>
+        </span>
+      </div>
+      <p className="mb-2 text-caption text-ink-muted">{stage.description}</p>
+      <ul className="flex flex-col">
+        {entry.units.map((progress) => (
+          <UnitRow key={progress.unit.id} progress={progress} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function UnitRow({ progress }: { progress: UnitProgress }) {
+  const { unit, state } = progress
+  const priority = PRIORITY_LABEL[unit.priority]
+  return (
+    <li className="grid gap-2 border-t border-line py-4 last:border-b md:grid-cols-[1fr_auto] md:items-center md:gap-8">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <span className="font-ja text-[15px] font-bold tracking-ja">{unit.name}</span>
+        {priority && <span className="text-[11px] tracking-ja text-ink-muted">{priority}</span>}
+        {!progress.prerequisitesMet && state !== 'preparing' && (
+          <span className="text-[11px] tracking-ja text-ink-muted">前提の単元が先</span>
+        )}
+      </div>
+      <div className="flex items-center gap-4 text-caption text-ink-muted tabular-nums">
+        {state !== 'preparing' && state !== 'untouched' && (
+          <span>
+            型 {progress.attemptedCount} / {progress.templateCount}
+            {progress.accuracy !== null && (
+              <span className="ml-3">正確さ {Math.round(progress.accuracy * 100)}%</span>
+            )}
+            <span className="ml-3">
+              定着 {progress.retention === null ? '—' : `${Math.round(progress.retention * 100)}%`}
+            </span>
+          </span>
+        )}
+        <StateTag state={state} />
+      </div>
+    </li>
+  )
+}
+
 /** Tessera の KEY NUMBER カード（白地に 1px の線） */
 function KeyNumber({
   label,
@@ -130,7 +254,7 @@ function ProgressBar({ value, label }: { value: number; label: string }) {
 function LevelsSection() {
   return (
     <section>
-      <SectionHeading number="02" en="Levels" ja="レベルと熟練度" />
+      <SectionHeading number="03" en="Levels" ja="レベルと熟練度" />
       <ul className="flex flex-col">
         {LABS.map((lab) => (
           <LevelRow key={lab.id} lab={lab} />
@@ -194,7 +318,7 @@ function MistakesSection() {
 
   return (
     <section>
-      <SectionHeading number="03" en="Mistakes" ja="間違いノート" />
+      <SectionHeading number="04" en="Mistakes" ja="間違いノート" />
       {mistakes.length === 0 ? (
         <p className="text-body-sm text-ink-muted">
           全問正解できなかった問題がここに集まります。同じ問題をもう一度解いて全問正解すると、ここから消えます。

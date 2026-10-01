@@ -4,6 +4,7 @@ import { certificationOf } from './certification'
 import { topicProgress } from './level'
 import { useProgressStore } from './store'
 import { computeStreak } from './streak'
+import { computeCourse } from './units'
 
 /**
  * 今の時刻。1 分ごとに更新するので、アプリを開いたまま日付が変わっても
@@ -34,4 +35,15 @@ export function useTopicProgress(topic: Topic) {
 export function useCertification(topic: Topic) {
   const attempts = useProgressStore((state) => state.attempts)
   return useMemo(() => certificationOf(attempts, topic), [attempts, topic])
+}
+
+/** コースの現在地（Stage の進み具合と単元の状態） */
+export function useCourse() {
+  const attempts = useProgressStore((state) => state.attempts)
+  const dayStartHour = useProgressStore((state) => state.settings.dayStartHour)
+  const now = useNow()
+  return useMemo(
+    () => computeCourse(attempts, { dayStartHour }, now),
+    [attempts, dayStartHour, now],
+  )
 }
