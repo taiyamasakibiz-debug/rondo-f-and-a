@@ -1,6 +1,8 @@
 import type { ProblemTemplate, Topic } from '@/engine/types'
 import { bottleneckMix } from './_private/cvp/bottleneck-mix'
 import { mutuallyExclusive } from './_private/npv/mutually-exclusive'
+import { currencyOption } from './_private/fx/currency-option'
+import { forwardContract } from './_private/fx/forward-contract'
 import { investmentAndFunding } from './_private/case4/investment-and-funding'
 import { peerAndPriceCut } from './_private/case4/peer-and-price-cut'
 import { replacementFunding } from './_private/case4/replacement-funding'
@@ -69,6 +71,9 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   wacc,
   dcf,
   evEbitda,
+  // 為替・デリバティブ（過去問の構造を参考にしたもの。公開しない）
+  forwardContract,
+  currencyOption,
   // 事例Ⅳ総合（過去問の構造を参考にしたもの。公開しない）
   peerAndPriceCut,
   investmentAndFunding,

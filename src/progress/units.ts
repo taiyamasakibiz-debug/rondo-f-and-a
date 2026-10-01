@@ -212,12 +212,14 @@ export function computeCourse(
   attempts: readonly Attempt[],
   settings: Pick<Settings, 'dayStartHour'>,
   now: Date,
+  /** 単元の一覧（テストで、準備中の単元などを差し込むため） */
+  units: readonly Unit[] = UNITS,
 ): CourseProgress {
   const today = dayKey(now, settings.dayStartHour)
   const live = liveAttempts(attempts).sort((a, b) => a.answeredAt.localeCompare(b.answeredAt))
 
   const byUnit = new Map<string, UnitProgress>()
-  for (const unit of UNITS) {
+  for (const unit of units) {
     const own = live.filter((attempt) => unit.templateIds.includes(attempt.templateId))
     const evaluation =
       unit.templateIds.length === 0
@@ -246,16 +248,16 @@ export function computeCourse(
   }
 
   const stages: StageProgress[] = STAGES.map((stage) => {
-    const units = UNITS.filter((unit) => unit.stage === stage.id).map((unit) =>
-      byUnit.get(unit.id)!,
-    )
-    const gateUnits = units.filter(
+    const stageUnits = units
+      .filter((unit) => unit.stage === stage.id)
+      .map((unit) => byUnit.get(unit.id)!)
+    const gateUnits = stageUnits.filter(
       (progress) => progress.unit.priority !== 'later' && progress.state !== 'preparing',
     )
     const consolidatedCount = gateUnits.filter((p) => p.state === 'consolidated').length
     return {
       stage,
-      units,
+      units: stageUnits,
       gateUnits,
       consolidatedCount,
       cleared: gateUnits.length > 0 && consolidatedCount === gateUnits.length,

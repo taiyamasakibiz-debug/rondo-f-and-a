@@ -63,7 +63,7 @@
 | `fin-npv` | 投資評価・NPV | 2 | 必須 | `fin-tvm` `acc-cf` | 投資（＋`_private/npv/`） | 5（目標達成） | 35 | 7 分 |
 | `mgt-seg` | セグメント別・意思決定 | 2 | 推奨 | `mgt-cvp` | CVP（`_private/seg/`） | 2（目標達成） | 15 | 5 分 |
 | `fin-val` | 企業価値・WACC | 2 | 推奨 | `fin-npv` | 投資（`_private/val/`） | 3（目標達成） | 15 | 6 分 |
-| `fin-fx` | 為替・デリバティブ | 2 | 後回し | `fin-tvm` | なし | 0 → 2 | 10 | 5 分 |
+| `fin-fx` | 為替・デリバティブ | 2 | 後回し | `fin-tvm` | 投資（`_private/fx/`） | 2（目標達成） | 10 | 5 分 |
 | `case4-int` | 事例Ⅳ総合 | 3 | 必須 | `acc-ca` `acc-cf` `mgt-cvp` `fin-npv` | なし（`_private/case4/`） | 4（目標達成） | 15 | 12 分 |
 
 - `case4-int` の前提は、NotebookLM の「すべて」ではなく、事例Ⅳの 4 大論点（分析・CF・CVP・NPV）に絞った
@@ -198,7 +198,7 @@
 - [x] 4. 認定を Stage のゲートにする。制限時間を想定時間から出す（画面は記録の Course と `/exam/:tier`）
 - [x] 5. 目標月と試験日の設定、局面ごとの復習の切り替え（`src/progress/phase.ts`、設定の Schedule）
 - [ ] 6. 導入期のブロック練習、想定時間の補正
-- [ ] 7. 新しい単元の問題（`fin-tvm`、`mgt-seg`、`case4-int`、`fin-val`、`fin-fx`、`fin-npv` に 1 型）。NotebookLM への依頼書：[`prompts/notebooklm-new-units-brief.md`](prompts/notebooklm-new-units-brief.md)
+- [x] 7. 新しい単元の問題（`fin-tvm`、`mgt-seg`、`case4-int`、`fin-val`、`fin-fx`、`fin-npv` に 1 型、`mgt-cvp` に 1 型。全 15 型、2026-10-01）。NotebookLM への依頼書：[`prompts/notebooklm-new-units-brief.md`](prompts/notebooklm-new-units-brief.md)
 
 ## 11. 未決
 

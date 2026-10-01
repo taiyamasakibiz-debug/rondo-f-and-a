@@ -161,7 +161,7 @@ export const UNITS: readonly Unit[] = [
     stage: 2,
     priority: 'later',
     prerequisites: ['fin-tvm'],
-    templateIds: [],
+    templateIds: ['fx.forward-contract', 'fx.currency-option'],
     expectedMinutes: 5,
   },
   {

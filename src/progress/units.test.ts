@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PROBLEM_TEMPLATES } from '@/problems'
-import { STAGES, UNITS, findUnit } from '@/course/units'
+import { STAGES, UNITS, type Unit, findUnit } from '@/course/units'
 import { type Attempt, DEFAULT_SETTINGS } from './types'
 import { COURSE_LEVEL_THRESHOLDS, computeCourse, courseLevel } from './units'
 
@@ -32,6 +32,29 @@ function attempt(
 }
 
 const cvpIds = findUnit('mgt-cvp')!.templateIds
+
+/** 問題の型がまだない単元（準備中）と、それを前提にする単元を足した一覧 */
+const WITH_PREPARING: Unit[] = [
+  ...UNITS,
+  {
+    id: 'new-unit',
+    name: '準備中の単元',
+    stage: 1,
+    priority: 'must',
+    prerequisites: [],
+    templateIds: [],
+    expectedMinutes: 3,
+  },
+  {
+    id: 'after-new-unit',
+    name: '準備中の単元が前提の単元',
+    stage: 1,
+    priority: 'must',
+    prerequisites: ['new-unit'],
+    templateIds: ['cvp.break-even.basic'],
+    expectedMinutes: 3,
+  },
+]
 /** CVP の全型を day の日に 1 回ずつ解いた記録 */
 function allTemplates(day: string, earned = 5): Attempt[] {
   return cvpIds.map((id) => attempt(id, day, earned))
@@ -74,7 +97,9 @@ describe('コースのデータ', () => {
 
 describe('単元の状態', () => {
   it('型がない単元は準備中', () => {
-    expect(stateOf([], at(10, 1), 'fin-fx')).toBe('preparing')
+    const course = computeCourse([], DEFAULT_SETTINGS, at(10, 1), WITH_PREPARING)
+    const unit = course.stages.flatMap((s) => s.units).find((p) => p.unit.id === 'new-unit')!
+    expect(unit.state).toBe('preparing')
   })
 
   it('解いていなければ未着手、解いたら学習中', () => {
@@ -149,10 +174,13 @@ describe('Stage と次の単元', () => {
   })
 
   it('準備中の単元は、修了にも前提にも数えない', () => {
-    const course = computeCourse([], DEFAULT_SETTINGS, at(10, 1))
-    const stage2 = course.stages[1]!
-    expect(stage2.units.find((p) => p.unit.id === 'fin-fx')!.state).toBe('preparing')
-    expect(stage2.gateUnits.map((p) => p.unit.id)).not.toContain('fin-fx')
+    const course = computeCourse([], DEFAULT_SETTINGS, at(10, 1), WITH_PREPARING)
+    const stage1 = course.stages[0]!
+    expect(stage1.units.map((p) => p.unit.id)).toContain('new-unit')
+    expect(stage1.gateUnits.map((p) => p.unit.id)).not.toContain('new-unit')
+    // 準備中の単元を前提にしている単元は、前提が済んだものとして扱う
+    const dependent = stage1.units.find((p) => p.unit.id === 'after-new-unit')!
+    expect(dependent.prerequisitesMet).toBe(true)
     // 事例Ⅳ総合は問題があるので、Stage 3 の修了に数える
     expect(course.stages[2]!.gateUnits.map((p) => p.unit.id)).toEqual(['case4-int'])
   })
