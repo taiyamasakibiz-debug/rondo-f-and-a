@@ -1,7 +1,9 @@
-# Rondo（v2）
+# Rondo F&A
 
 中小企業診断士の 2 次試験「事例Ⅳ」と 1 次試験「財務・会計」を、毎日の短い演習で鍛える学習アプリ。
 数値を変えて何度でも解ける問題を、その場で採点し、間違えた原因まで返す。
+
+> 前の版（v1、Luminous Insights）は [taiyamasakibiz-debug/Luminous-Insights](https://github.com/taiyamasakibiz-debug/Luminous-Insights) に残している。このリポジトリは v2 から始まる（履歴は v1 から続いている）。
 
 - 設計：[`docs/DESIGN.md`](docs/DESIGN.md)
 - 学習コース・レベル・認定の設計：[`docs/COURSE.md`](docs/COURSE.md)
@@ -65,4 +67,4 @@ src/
 ## デプロイ
 
 Cloudflare Workers（静的アセット）。設定は [`wrangler.jsonc`](wrangler.jsonc)。
-本番ブランチへの push で本番に、ほかのブランチはプレビューにデプロイされる。
+main への push で本番に、ほかのブランチはプレビューにデプロイされる。Worker の名前は `luminous-insights` のまま（名前を変えると URL が変わり、ブラウザに保存した記録と同期のデータが見えなくなるため）。
