@@ -8,6 +8,7 @@ import { storeClosure } from './_private/seg/store-closure'
 import { paymentPlans } from './_private/tvm/payment-plans'
 import { perpetuity } from './_private/tvm/perpetuity'
 import { dcf } from './_private/val/dcf'
+import { evEbitda } from './_private/val/ev-ebitda'
 import { wacc } from './_private/val/wacc'
 import { compareWithPeer } from './analysis/compare'
 import { efficiency, profitability, safety } from './analysis/indicators'
@@ -62,6 +63,7 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   // 企業価値・WACC（過去問の構造を参考にしたもの。公開しない）
   wacc,
   dcf,
+  evEbitda,
   // 事例Ⅳ総合（過去問の構造を参考にしたもの。公開しない）
   peerAndPriceCut,
   investmentAndFunding,

@@ -150,7 +150,7 @@ export const UNITS: readonly Unit[] = [
     stage: 2,
     priority: 'recommended',
     prerequisites: ['fin-npv'],
-    templateIds: ['val.wacc', 'val.dcf'],
+    templateIds: ['val.wacc', 'val.dcf', 'val.ev-ebitda'],
     expectedMinutes: 6,
   },
   {

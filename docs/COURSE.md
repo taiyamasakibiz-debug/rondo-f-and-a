@@ -62,7 +62,7 @@
 | `fin-tvm` | 資金の時間価値 | 1 | 必須 | `acc-bs-pl` | 投資（`_private/tvm/`） | 2（目標達成） | 12 | 3 分 |
 | `fin-npv` | 投資評価・NPV | 2 | 必須 | `fin-tvm` `acc-cf` | 投資 | 4 → 5 | 35 | 7 分 |
 | `mgt-seg` | セグメント別・意思決定 | 2 | 推奨 | `mgt-cvp` | CVP（`_private/seg/`） | 2（目標達成） | 15 | 5 分 |
-| `fin-val` | 企業価値・WACC | 2 | 推奨 | `fin-npv` | 投資（`_private/val/`） | 2 → 3 | 15 | 6 分 |
+| `fin-val` | 企業価値・WACC | 2 | 推奨 | `fin-npv` | 投資（`_private/val/`） | 3（目標達成） | 15 | 6 分 |
 | `fin-fx` | 為替・デリバティブ | 2 | 後回し | `fin-tvm` | なし | 0 → 2 | 10 | 5 分 |
 | `case4-int` | 事例Ⅳ総合 | 3 | 必須 | `acc-ca` `acc-cf` `mgt-cvp` `fin-npv` | なし（`_private/case4/`） | 4（目標達成） | 15 | 12 分 |
 
