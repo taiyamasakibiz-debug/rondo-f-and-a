@@ -52,12 +52,13 @@ export function Splash({ onDone }: { onDone: () => void }) {
           className="size-28 rounded-[22%] shadow-[0_18px_40px_-18px_rgba(18,18,19,0.45)]"
           {...rise(0.05)}
         />
-        <motion.img
-          src="/brand/logo-wordmark.svg"
-          alt="Rondo"
-          className="h-10 w-auto"
-          {...rise(0.15)}
-        />
+        <motion.div className="flex flex-col items-center gap-2" {...rise(0.15)}>
+          <img src="/brand/logo-wordmark.svg" alt="Rondo" className="h-10 w-auto" />
+          {/* 財務・会計（Finance & Accounting）。ロゴの高さの 3 分の 1 くらい */}
+          <span className="text-[13px] leading-none font-bold tracking-[0.3em] text-ink">
+            F&amp;A
+          </span>
+        </motion.div>
       </div>
 
       <motion.p
