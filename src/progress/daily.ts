@@ -1,7 +1,7 @@
 import { UNITS } from '@/course/units'
 import { createRandom } from '@/engine/random'
 import type { ProblemTemplate, Topic } from '@/engine/types'
-import { type DayKey, dayKey } from './day'
+import { type DayKey, dayKey, daysBetween } from './day'
 import { topicProgress } from './level'
 import { type Phase, phaseOf } from './phase'
 import { buildReviewCards, dueCards } from './review'
@@ -20,6 +20,8 @@ export type DailyReason =
   | 'practice'
   /** 直前期の本番形式（総合問題・難しい問題） */
   | 'exam'
+  /** 導入期：入ったばかりの型を、数値を変えて続けて解く（3 回連続で正解するまで） */
+  | 'intro'
 
 export type DailyItem = {
   templateId: string
@@ -36,6 +38,40 @@ export type DailyPlan = {
   items: DailyItem[]
   doneCount: number
   complete: boolean
+}
+
+/** 導入期を終えるのに要る、同じ型の連続正解の回数（docs/COURSE.md §9.1） */
+export const INTRO_STREAK = 3
+
+/**
+ * 導入中として続きを出すのは、最後に解いてからこの日数以内の型だけ。
+ * ずっと前にラボや認定テストで 1 回だけ解いた型が、急に続けて出てこないように
+ */
+export const INTRO_RECENT_DAYS = 14
+
+/**
+ * 型ごとの導入期の状態。古い順にたどり、全問正解の連続が INTRO_STREAK に一度でも届いたら導入済み。
+ * 導入中なら、あと何回続けて正解すればよいか（need）を返す。
+ */
+export function introStatus(
+  history: readonly Attempt[],
+): Map<string, { introduced: boolean; need: number; lastAt: string }> {
+  const status = new Map<string, { introduced: boolean; streak: number; lastAt: string }>()
+  for (const attempt of [...history].sort((a, b) => a.answeredAt.localeCompare(b.answeredAt))) {
+    const current = status.get(attempt.templateId) ?? { introduced: false, streak: 0, lastAt: '' }
+    const streak = attempt.allCorrect ? current.streak + 1 : 0
+    status.set(attempt.templateId, {
+      introduced: current.introduced || streak >= INTRO_STREAK,
+      streak,
+      lastAt: attempt.answeredAt,
+    })
+  }
+  return new Map(
+    [...status].map(([id, { introduced, streak, lastAt }]) => [
+      id,
+      { introduced, need: introduced ? 0 : INTRO_STREAK - streak, lastAt },
+    ]),
+  )
 }
 
 /** 直前期のデイリーのうち、本番形式にする割合 */
@@ -88,6 +124,12 @@ export function buildDaily(
   const push = (template: ProblemTemplate, reason: DailyReason, limit = count) => {
     if (chosen.length < limit && !isChosen(template.id)) chosen.push({ template, reason })
   }
+  /** 導入期の型を、数値を変えて times 回まで続けて並べる（同じ型が並ぶのはここだけ） */
+  const pushIntro = (template: ProblemTemplate, times: number) => {
+    for (let i = 0; i < times && chosen.length < count; i += 1) {
+      chosen.push({ template, reason: 'intro' })
+    }
+  }
 
   const lastByTemplate = latestByTemplate(history)
   const attempted = new Set(history.map((attempt) => attempt.templateId))
@@ -96,25 +138,23 @@ export function buildDaily(
     lastByTemplate.get(template.id)?.answeredAt ?? ''
 
   /** 復習の期日が来た問題（期日を過ぎた日数が多い順）。前回全問正解できなかったものは retry */
-  const pushReviews = (limit: number) => {
+  const pushReviews = (limit: number, skip: ReadonlySet<string> = new Set()) => {
     for (const card of dueCards(buildReviewCards(history, settings), today)) {
       const template = byId.get(card.templateId)
-      if (template) {
+      if (template && !skip.has(template.id)) {
         push(template, lastByTemplate.get(template.id)?.allCorrect ? 'review' : 'retry', limit)
       }
     }
   }
 
-  /** まだ解いたことがない問題。次の単元の問題を先に、そのあとはレベルが低いラボから 1 問ずつ順番に */
-  const pushNew = () => {
+  /** まだ解いたことがない問題の順番。次の単元の問題を先に、そのあとはレベルが低いラボから 1 問ずつ順番に */
+  const newOrder = (): ProblemTemplate[] => {
     const nextUnit = computeCourse(history, settings, now).nextUnit?.unit
     const preferred = new Set(nextUnit?.templateIds ?? [])
-    for (const template of shuffle(
+    const order = shuffle(
       fresh.filter((t) => preferred.has(t.id)),
       random,
-    )) {
-      push(template, 'new')
-    }
+    )
 
     const xpByTopic = new Map(
       [...new Set(templates.map((t) => t.topic))].map((topic) => [
@@ -129,17 +169,21 @@ export function buildDaily(
       topics.map((topic) => [
         topic,
         shuffle(
-          fresh.filter((t) => t.topic === topic && !isChosen(t.id)),
+          fresh.filter((t) => t.topic === topic && !preferred.has(t.id)),
           random,
         ),
       ]),
     )
-    while (chosen.length < count && [...queues.values()].some((queue) => queue.length > 0)) {
+    while ([...queues.values()].some((queue) => queue.length > 0)) {
       for (const topic of topics) {
         const template = queues.get(topic)!.shift()
-        if (template) push(template, 'new')
+        if (template) order.push(template)
       }
     }
+    return order
+  }
+  const pushNew = () => {
+    for (const template of newOrder()) push(template, 'new')
   }
 
   /** しばらく解いていない問題（最後に解いた日が古い順）。attemptedFirst なら、解いたことのある問題を先に */
@@ -156,10 +200,29 @@ export function buildDaily(
   }
 
   if (phase === 'mastery') {
-    // 復習が溜まっていても、新しい問題を 1 問は残す（新しい単元が止まらないように）
-    const reviewLimit = fresh.length > 0 && count > 1 ? count - 1 : count
-    pushReviews(reviewLimit)
-    pushNew()
+    // 導入期：導入中の型（いちばん最近に解いたもの）があればその続きを、なければ新しい型を、
+    // 3 回連続で正解するのに足りない回数だけ、数値を変えて続けて出す（ブロック練習）
+    const intro = introStatus(history)
+    const ongoing = [...intro]
+      .filter(
+        ([id, s]) =>
+          !s.introduced &&
+          byId.has(id) &&
+          daysBetween(dayKey(new Date(s.lastAt), settings.dayStartHour), today) <=
+            INTRO_RECENT_DAYS,
+      )
+      .sort((a, b) => b[1].lastAt.localeCompare(a[1].lastAt))[0]
+    const order = newOrder()
+    const block = ongoing
+      ? { template: byId.get(ongoing[0])!, times: ongoing[1].need }
+      : order[0]
+        ? { template: order[0], times: INTRO_STREAK }
+        : undefined
+    // 復習が溜まっていても、導入（新しい問題）の枠を 1 問は残す（新しい単元が止まらないように）
+    const reviewLimit = block && count > 1 ? count - 1 : count
+    pushReviews(reviewLimit, new Set(block ? [block.template.id] : []))
+    if (block) pushIntro(block.template, block.times)
+    for (const template of order) push(template, 'new')
     pushRest(false)
   } else if (phase === 'maintenance') {
     pushReviews(count)

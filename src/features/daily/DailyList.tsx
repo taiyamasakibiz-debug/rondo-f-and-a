@@ -13,6 +13,7 @@ const REASON_LABELS: Record<DailyReason, { en: string; ja: string }> = {
   new: { en: 'NEW', ja: 'はじめての問題' },
   practice: { en: 'PRACTICE', ja: 'しばらくぶり' },
   exam: { en: 'EXAM', ja: '本番形式' },
+  intro: { en: 'INTRO', ja: '導入（同じ型を続けて）' },
 }
 
 /** 今日のデイリーの問題の一覧。ホームとデイリーのページで使う */
@@ -49,7 +50,9 @@ export function DailyList({ items }: { items: readonly DailyItem[] }) {
                   <span
                     className={cn(
                       'rounded-pill px-3 py-1 text-[11px] font-bold tracking-[0.1em]',
-                      item.reason === 'new' ? 'bg-sky-50' : 'border border-line',
+                      item.reason === 'new' || item.reason === 'intro'
+                        ? 'bg-sky-50'
+                        : 'border border-line',
                     )}
                   >
                     {reason.en}

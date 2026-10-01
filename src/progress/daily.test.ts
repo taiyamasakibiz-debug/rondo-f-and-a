@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ProblemTemplate, Topic } from '@/engine/types'
 import { PROBLEM_TEMPLATES } from '@/problems'
-import { buildDaily, dailyPracticePath, nextDailyItem } from './daily'
+import { INTRO_STREAK, buildDaily, dailyPracticePath, introStatus, nextDailyItem } from './daily'
 import { type Attempt, DEFAULT_SETTINGS } from './types'
 
 function template(id: string, topic: Topic): ProblemTemplate {
@@ -48,6 +48,11 @@ function attempt(templateId: string, day: string, overrides: Partial<Attempt> = 
   }
 }
 
+/** 導入期を終えた記録（同じ型を 3 回続けて全問正解）。復習の期日に響かないよう、ずっと前の日にする */
+function introduced(templateId: string, day = '2026-09-01'): Attempt[] {
+  return Array.from({ length: INTRO_STREAK }, () => attempt(templateId, day))
+}
+
 const noon = (day: string) => {
   const [y, m, d] = day.split('-').map(Number)
   return new Date(y!, m! - 1, d!, 12)
@@ -59,7 +64,8 @@ describe('buildDaily', () => {
     const b = buildDaily([], DEFAULT_SETTINGS, templates, new Date(2026, 9, 10, 23))
     expect(a.items).toHaveLength(3)
     expect(a.items).toEqual(b.items)
-    expect(new Set(a.items.map((item) => item.templateId)).size).toBe(3)
+    // 同じ型が並んでも、数値（シード）は違う
+    expect(new Set(a.items.map((item) => item.seed)).size).toBe(3)
   })
 
   it('日が変われば別の組み合わせになりうる（シードは必ず変わる）', () => {
@@ -68,39 +74,41 @@ describe('buildDaily', () => {
     expect(a.items.map((i) => i.seed)).not.toEqual(b.items.map((i) => i.seed))
   })
 
-  it('はじめてのときは、ラボが偏らないように新しい問題を選ぶ', () => {
+  it('はじめてのときは、新しい型を 1 つ選び、数値を変えて 3 回続けて出す（導入期）', () => {
     const plan = buildDaily([], DEFAULT_SETTINGS, templates, noon('2026-10-10'))
-    expect(plan.items.every((item) => item.reason === 'new')).toBe(true)
-    expect(new Set(plan.items.map((item) => item.topic)).size).toBe(3)
+    expect(plan.items.every((item) => item.reason === 'intro')).toBe(true)
+    expect(new Set(plan.items.map((item) => item.templateId)).size).toBe(1)
   })
 
   it('復習の期日が来た問題を最初に出し、前回間違えた問題は retry とする', () => {
     const history = [
+      ...introduced('cvp.a'), // 期日 9/8（期日を過ぎた日数がいちばん多い）
+      ...introduced('npv.a'),
       attempt('npv.a', '2026-10-08', { earned: 1, allCorrect: false }), // 期日 10/9
-      attempt('cvp.a', '2026-10-09'), // 期日 10/10
     ]
     const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
     expect(plan.items.slice(0, 2).map((item) => [item.templateId, item.reason])).toEqual([
-      ['npv.a', 'retry'],
       ['cvp.a', 'review'],
+      ['npv.a', 'retry'],
     ])
-    expect(plan.items[2]!.reason).toBe('new')
+    // 残りの 1 問は、導入（新しい型）の枠
+    expect(plan.items[2]!.reason).toBe('intro')
   })
 
-  it('新しい問題は、XP が少ないラボから選ぶ', () => {
-    // cvp と npv は 2 回ずつ全問正解（10/6 の 2 回目で間隔 3 日 → 期日 10/9）。cf は未経験
+  it('新しい型は、XP が少ないラボから選ぶ', () => {
+    // cvp と npv は導入済み（9/1 に 3 回続けて全問正解 → 期日 9/8 を過ぎ、10/4 に解き直して期日 10/18）。cf は未経験
     const history = [
-      attempt('cvp.a', '2026-10-05'),
-      attempt('cvp.a', '2026-10-06'),
-      attempt('npv.a', '2026-10-05'),
-      attempt('npv.a', '2026-10-06'),
+      ...introduced('cvp.a'),
+      ...introduced('npv.a'),
+      attempt('cvp.a', '2026-10-04'),
+      attempt('npv.a', '2026-10-04'),
     ]
     const settings = { ...DEFAULT_SETTINGS, dailyGoal: 1 }
     const plan = buildDaily(history, settings, templates, noon('2026-10-08'))
-    expect(plan.items[0]).toMatchObject({ topic: 'cf', reason: 'new' })
+    expect(plan.items[0]).toMatchObject({ topic: 'cf', reason: 'intro' })
 
-    // 期日の 10/9 になると復習が優先される
-    const dueDay = buildDaily(history, settings, templates, noon('2026-10-09'))
+    // 期日の 10/18 になると、ノルマが 1 問なら復習が優先される
+    const dueDay = buildDaily(history, settings, templates, noon('2026-10-18'))
     expect(dueDay.items[0]!.reason).toBe('review')
   })
 
@@ -157,22 +165,23 @@ describe('buildDaily', () => {
 })
 
 describe('マスター期間のデイリー', () => {
-  it('復習が溜まっていても、新しい問題を 1 問は残す', () => {
-    const history = ['cvp.a', 'cvp.b', 'npv.a'].map((id) =>
+  it('復習が溜まっていても、導入（新しい型）の枠を 1 問は残す', () => {
+    const history = ['cvp.a', 'cvp.b', 'npv.a'].flatMap((id) => [
+      ...introduced(id),
       attempt(id, '2026-10-01', { earned: 1, allCorrect: false }),
-    )
+    ])
     const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
     expect(plan.phase).toBe('mastery')
-    expect(plan.items.map((item) => item.reason)).toEqual(['retry', 'retry', 'new'])
+    expect(plan.items.map((item) => item.reason)).toEqual(['retry', 'retry', 'intro'])
   })
 
   it('新しい問題は、次の単元（前提が済んだいちばん手前の単元）から出す', () => {
     const plan = buildDaily([], DEFAULT_SETTINGS, PROBLEM_TEMPLATES, noon('2026-10-10'))
-    // いちばん手前は財務諸表・仕訳基礎（仕訳ラボの問題）
+    // いちばん手前は財務諸表・仕訳基礎（仕訳ラボの問題）。その型を 3 回続ける
     expect(plan.items.map((item) => [item.topic, item.reason])).toEqual([
-      ['journal', 'new'],
-      ['journal', 'new'],
-      ['journal', 'new'],
+      ['journal', 'intro'],
+      ['journal', 'intro'],
+      ['journal', 'intro'],
     ])
   })
 })
@@ -237,5 +246,66 @@ describe('直前期のデイリー', () => {
     const plan = buildDaily([], DEFAULT_SETTINGS, templates, noon(day))
     expect(plan.items).toHaveLength(3)
     expect(plan.items.some((item) => item.reason === 'exam')).toBe(false)
+  })
+})
+
+describe('導入期（ブロック練習）', () => {
+  it('3 回続けて全問正解するまでは導入中。一度届けば、あとで間違えても導入済み', () => {
+    const status = introStatus([
+      attempt('cvp.a', '2026-10-01'),
+      attempt('cvp.a', '2026-10-01', { earned: 1, allCorrect: false }),
+      attempt('cvp.a', '2026-10-02'),
+      attempt('npv.a', '2026-10-01'),
+      attempt('npv.a', '2026-10-01'),
+      attempt('npv.a', '2026-10-01'),
+      attempt('npv.a', '2026-10-02', { earned: 0, allCorrect: false }),
+    ])
+    expect(status.get('cvp.a')).toMatchObject({ introduced: false, need: 2 })
+    expect(status.get('npv.a')).toMatchObject({ introduced: true, need: 0 })
+  })
+
+  it('翌日は、導入中の型の続きを、足りない回数だけ出す', () => {
+    // 10/9 に cvp.a を 1 回正解 → あと 2 回
+    const history = [attempt('cvp.a', '2026-10-09')]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
+    expect(plan.items.map((item) => [item.templateId, item.reason])).toEqual([
+      ['cvp.a', 'intro'],
+      ['cvp.a', 'intro'],
+      [plan.items[2]!.templateId, 'new'],
+    ])
+    expect(plan.items[2]!.templateId).not.toBe('cvp.a')
+  })
+
+  it('導入中に間違えると、また 3 回続ける', () => {
+    const history = [
+      attempt('cvp.a', '2026-10-09'),
+      attempt('cvp.a', '2026-10-09', { earned: 1, allCorrect: false }),
+    ]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
+    expect(plan.items.every((item) => item.templateId === 'cvp.a' && item.reason === 'intro')).toBe(
+      true,
+    )
+  })
+
+  it('導入を終えた型は、ほかの型と混ぜて出す（同じ型は 1 日 1 回）', () => {
+    const history = introduced('cvp.a', '2026-10-09')
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
+    expect(plan.items.filter((item) => item.templateId === 'cvp.a').length).toBeLessThanOrEqual(1)
+  })
+
+  it('ずっと前に 1 回だけ解いた型は、導入の続きとしては出さない', () => {
+    // 15 日前に 1 回だけ解いた cvp.a は、導入の続きにしない（新しい型の導入になる）
+    const history = [attempt('cvp.a', '2026-09-25')]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
+    const intro = plan.items.filter((item) => item.reason === 'intro')
+    expect(intro.length).toBeGreaterThan(0)
+    expect(intro.every((item) => item.templateId !== 'cvp.a')).toBe(true)
+  })
+
+  it('維持期間と直前期は、導入期の出し方をしない', () => {
+    const history = [attempt('cvp.a', '2027-05-01')]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2027-05-10'))
+    expect(plan.phase).toBe('maintenance')
+    expect(plan.items.some((item) => item.reason === 'intro')).toBe(false)
   })
 })
