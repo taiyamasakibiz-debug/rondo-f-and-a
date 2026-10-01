@@ -87,7 +87,7 @@ function Volume({
 }
 
 /**
- * 設定画面の「音と振動」。端末ごとの好みなので、ほかの端末とは同期しない。
+ * 設定画面の「効果音と BGM」。端末ごとの好みなので、ほかの端末とは同期しない。
  */
 export function FeedbackPanel() {
   const preferences = useFeedbackPreferences()
@@ -122,15 +122,9 @@ export function FeedbackPanel() {
           onChange={(bgmVolume) => update({ bgmVolume })}
         />
       </div>
-      <Toggle
-        label="振動"
-        help="スマホを短く振動させます。iPhone は iOS 18 以降で、決まった強さの短い振動になります。"
-        checked={preferences.haptics}
-        onChange={(haptics) => update({ haptics })}
-      />
       <p className="text-caption text-ink-muted">
-        iPhone では、マナーモードのときは効果音と BGM
-        が鳴りません。音と振動の設定は、この端末だけに保存されます。
+        iPhone では、マナーモードのときは効果音と BGM が鳴りません。効果音と BGM
+        の設定は、この端末だけに保存されます。
       </p>
       <div className="flex flex-wrap gap-3">
         <Button type="button" variant="outline" size="sm" onClick={() => feedback('correct')}>

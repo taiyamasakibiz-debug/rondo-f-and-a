@@ -32,7 +32,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" subtitle="設定" />
       <div className="flex flex-col gap-16">
         <DailySection />
-        <Section en="Sound" ja="音と振動">
+        <Section en="Sound" ja="効果音と BGM">
           <FeedbackPanel />
         </Section>
         <Section en="Sync" ja="端末間の同期">

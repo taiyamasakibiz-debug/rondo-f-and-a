@@ -95,7 +95,7 @@ function Practice({
     event.preventDefault()
     const graded = gradeProblem(problem, inputs)
     setResult(graded)
-    // 採点の瞬間の手応え（音と振動）。ボタンを押した操作の中で鳴らす
+    // 採点の瞬間の手応え（効果音）。ボタンを押した操作の中で鳴らす
     feedback(graded.allCorrect ? 'correct' : graded.earned > 0 ? 'partial' : 'incorrect')
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
 

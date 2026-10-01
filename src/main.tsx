@@ -13,7 +13,7 @@ void useProgressStore.getState().load()
 void useLedgerStore.getState().load()
 // 同期キーを保存してある端末では、ほかの端末との同期を始める（解答記録と設定だけ）
 startAutoSync()
-// 効果音・BGM・振動（最初のタップで音の準備をする）
+// 効果音・BGM（最初のタップで音の準備をする）
 startFeedback()
 
 createRoot(document.getElementById('root')!).render(

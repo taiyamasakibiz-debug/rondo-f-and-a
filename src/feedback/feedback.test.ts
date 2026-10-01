@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { startBgm } from './bgm'
-import { feedback } from './index'
-import { PATTERNS } from './haptics'
 import { DEFAULT_PREFERENCES, parsePreferences, useFeedbackPreferences } from './preferences'
 import { SOUNDS, type SoundName } from './sounds'
 
@@ -83,11 +81,11 @@ describe('BGM', () => {
   })
 })
 
-describe('音と振動の設定', () => {
+describe('効果音と BGM の設定', () => {
   it('壊れた値や範囲外の値は、初期値や範囲内に直す', () => {
     expect(parsePreferences(null)).toEqual(DEFAULT_PREFERENCES)
     expect(parsePreferences('{')).toEqual(DEFAULT_PREFERENCES)
-    expect(parsePreferences('{"bgm":true,"seVolume":3,"haptics":"yes"}')).toEqual({
+    expect(parsePreferences('{"bgm":true,"seVolume":3,"se":"yes"}')).toEqual({
       ...DEFAULT_PREFERENCES,
       bgm: true,
       seVolume: 1,
@@ -101,58 +99,5 @@ describe('音と振動の設定', () => {
       bgmVolume: 0.3,
     })
     useFeedbackPreferences.getState().update(DEFAULT_PREFERENCES)
-  })
-})
-
-describe('振動', () => {
-  afterEach(() => {
-    Reflect.deleteProperty(navigator, 'vibrate')
-    useFeedbackPreferences.getState().update(DEFAULT_PREFERENCES)
-  })
-
-  it('振動がオンなら、出来事ごとのパターンで振動する', () => {
-    const vibrate = vi.fn()
-    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
-    feedback('levelUp')
-    expect(vibrate).toHaveBeenCalledWith(PATTERNS.levelUp)
-  })
-
-  it('振動がオフなら振動しない', () => {
-    const vibrate = vi.fn()
-    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
-    useFeedbackPreferences.getState().update({ haptics: false })
-    feedback('correct')
-    expect(vibrate).not.toHaveBeenCalled()
-  })
-})
-
-describe('振動（iPhone）', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-    vi.restoreAllMocks()
-    Reflect.deleteProperty(window, 'matchMedia')
-  })
-
-  it('Vibration API がなければ、見えないスイッチを押す（1 回目はその場で）', () => {
-    vi.useFakeTimers()
-    Object.defineProperty(window, 'matchMedia', {
-      value: () => ({ matches: true }),
-      configurable: true,
-    })
-    const clicks: HTMLLabelElement[] = []
-    vi.spyOn(HTMLLabelElement.prototype, 'click').mockImplementation(function (
-      this: HTMLLabelElement,
-    ) {
-      clicks.push(this)
-      expect(this.querySelector('input[type=checkbox][switch]')).not.toBeNull()
-      expect(this.isConnected).toBe(true)
-    })
-
-    feedback('levelUp')
-    expect(clicks).toHaveLength(1)
-    vi.advanceTimersByTime(1000)
-    expect(clicks).toHaveLength(3)
-    // 使い終わったスイッチは残さない
-    expect(document.querySelectorAll('input[switch]')).toHaveLength(0)
   })
 })

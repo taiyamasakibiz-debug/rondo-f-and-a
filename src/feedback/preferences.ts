@@ -1,15 +1,13 @@
 import { create } from 'zustand'
 
 /**
- * 音と振動の設定。端末ごとの好みなので、ほかの端末とは同期せず、このブラウザにだけ保存する。
+ * 効果音と BGM の設定。端末ごとの好みなので、ほかの端末とは同期せず、このブラウザにだけ保存する。
  */
 export type FeedbackPreferences = {
   /** 効果音 */
   se: boolean
   /** BGM（はじめはオフ。開いた瞬間に音が鳴らないように） */
   bgm: boolean
-  /** 振動（触覚フィードバック） */
-  haptics: boolean
   /** 効果音の音量（0〜1） */
   seVolume: number
   /** BGM の音量（0〜1） */
@@ -19,7 +17,6 @@ export type FeedbackPreferences = {
 export const DEFAULT_PREFERENCES: FeedbackPreferences = {
   se: true,
   bgm: false,
-  haptics: true,
   seVolume: 0.7,
   bgmVolume: 0.5,
 }
@@ -36,12 +33,11 @@ export function parsePreferences(raw: string | null): FeedbackPreferences {
   if (!raw) return DEFAULT_PREFERENCES
   try {
     const value = JSON.parse(raw) as Partial<Record<keyof FeedbackPreferences, unknown>>
-    const flag = (key: 'se' | 'bgm' | 'haptics') =>
+    const flag = (key: 'se' | 'bgm') =>
       typeof value[key] === 'boolean' ? value[key] : DEFAULT_PREFERENCES[key]
     return {
       se: flag('se'),
       bgm: flag('bgm'),
-      haptics: flag('haptics'),
       seVolume: clamp01(value.seVolume, DEFAULT_PREFERENCES.seVolume),
       bgmVolume: clamp01(value.bgmVolume, DEFAULT_PREFERENCES.bgmVolume),
     }

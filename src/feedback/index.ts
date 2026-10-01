@@ -1,18 +1,16 @@
 import { getAudio, setBusVolume, unlockAudio } from './audio'
 import { type BgmPlayer, startBgm } from './bgm'
-import { vibrate } from './haptics'
 import { useFeedbackPreferences } from './preferences'
 import { SOUNDS, type SoundName } from './sounds'
 
 export type { SoundName } from './sounds'
 
 /**
- * 手応えの出口：効果音と振動を、設定に合わせてまとめて鳴らす。
+ * 手応えの出口：効果音を、設定に合わせて鳴らす。
  * 画面の演出（src/lib/motion.ts の STAGE）と同じタイミングで呼ぶ。
  */
 export function feedback(name: SoundName): void {
   const preferences = useFeedbackPreferences.getState()
-  if (preferences.haptics) vibrate(name)
   if (!preferences.se) return
   const audio = getAudio()
   if (!audio || audio.context.state !== 'running') return
