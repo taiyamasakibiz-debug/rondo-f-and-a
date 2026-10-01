@@ -144,7 +144,7 @@ describe('examEligibility', () => {
   })
 
   it('1 つ下の認定がなければ受けられない', () => {
-    const practised = touched(...stage1, 'fin-npv')
+    const practised = touched(...stage1, 'fin-npv', 'mgt-seg')
     expect(examEligibility(practised, 'silver', DEFAULT_SETTINGS, now)).toMatchObject({
       eligible: false,
       reason: expect.stringContaining('ブロンズ'),
@@ -186,15 +186,25 @@ describe('buildExam', () => {
     ])
   })
 
-  it('問題がない単元の枠は飛ばし、足りない問題は最初の枠から使い回す', () => {
-    // シルバーの最後の枠（セグメント／企業価値）は、まだ問題がない
+  it('シルバーは、経営分析・CVP・CF・NPV・セグメントの単元から 1 問ずつ出す', () => {
     const units = buildExam('silver', 1).items.map((item) => unitOf(item.templateId))
+    expect(units).toEqual(['acc-ca', 'mgt-cvp', 'acc-cf', 'fin-npv', 'mgt-seg'])
+  })
+
+  it('問題がない単元の枠は飛ばし、足りない問題は最初の枠から使い回す', () => {
+    // セグメント（と企業価値）の問題がないとき、シルバーの最後の枠は飛ばされる
+    const withoutSegment = PROBLEM_TEMPLATES.filter((t) => !t.id.startsWith('seg.'))
+    const units = buildExam('silver', 1, withoutSegment).items.map((item) =>
+      unitOf(item.templateId),
+    )
     expect(units).toEqual(['acc-ca', 'mgt-cvp', 'acc-cf', 'fin-npv', 'acc-ca'])
   })
 
   it('同じ単元から続けて出すときは、別の型を選ぶ', () => {
+    // セグメントの問題がないと、経営分析から 2 問出る
+    const withoutSegment = PROBLEM_TEMPLATES.filter((t) => !t.id.startsWith('seg.'))
     for (const seed of [1, 2, 3, 4, 5]) {
-      const analysis = buildExam('silver', seed).items.filter((item) =>
+      const analysis = buildExam('silver', seed, withoutSegment).items.filter((item) =>
         item.templateId.startsWith('analysis.'),
       )
       expect(new Set(analysis.map((item) => item.templateId)).size).toBe(analysis.length)
@@ -217,7 +227,7 @@ describe('buildExam', () => {
   it('制限時間は、出題した問題の想定時間の合計 × 係数（5 分単位）', () => {
     // 仕訳 3 + 分析 4 + CVP 5 + CF 5 + 時間価値 3 = 20 分 → ×1.3 = 26 分 → 25 分
     expect(buildExam('bronze', 1).timeLimitMs).toBe(25 * 60_000)
-    // 分析 4 + CVP 5 + CF 5 + NPV 7 + 分析 4 = 25 分 → ×1.0 = 25 分
+    // 分析 4 + CVP 5 + CF 5 + NPV 7 + セグメント 5 = 26 分 → ×1.0 = 26 分 → 25 分
     expect(buildExam('silver', 1).timeLimitMs).toBe(25 * 60_000)
   })
 

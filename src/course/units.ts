@@ -141,7 +141,7 @@ export const UNITS: readonly Unit[] = [
     stage: 2,
     priority: 'recommended',
     prerequisites: ['mgt-cvp'],
-    templateIds: [],
+    templateIds: ['seg.store-closure', 'seg.special-order'],
     expectedMinutes: 5,
   },
   {
