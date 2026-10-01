@@ -58,9 +58,9 @@
 | `acc-bs-pl` | 財務諸表・仕訳基礎 | 1 | 推奨 | — | 仕訳 | 6 → 3 | 12 | 3 分 |
 | `acc-ca` | 経営分析 | 1 | 必須 | `acc-bs-pl` | 分析 | 5 → 4 | 25 | 4 分 |
 | `acc-cf` | キャッシュ・フロー計算書 | 1 | 必須 | `acc-bs-pl` | CF | 4 → 3 | 20 | 5 分 |
-| `mgt-cvp` | CVP 分析 | 1 | 必須 | `acc-bs-pl` | CVP | 5 → 4 | 25 | 5 分 |
+| `mgt-cvp` | CVP 分析 | 1 | 必須 | `acc-bs-pl` | CVP（＋`_private/cvp/`） | 6（目標達成） | 25 | 5 分 |
 | `fin-tvm` | 資金の時間価値 | 1 | 必須 | `acc-bs-pl` | 投資（`_private/tvm/`） | 2（目標達成） | 12 | 3 分 |
-| `fin-npv` | 投資評価・NPV | 2 | 必須 | `fin-tvm` `acc-cf` | 投資 | 4 → 5 | 35 | 7 分 |
+| `fin-npv` | 投資評価・NPV | 2 | 必須 | `fin-tvm` `acc-cf` | 投資（＋`_private/npv/`） | 5（目標達成） | 35 | 7 分 |
 | `mgt-seg` | セグメント別・意思決定 | 2 | 推奨 | `mgt-cvp` | CVP（`_private/seg/`） | 2（目標達成） | 15 | 5 分 |
 | `fin-val` | 企業価値・WACC | 2 | 推奨 | `fin-npv` | 投資（`_private/val/`） | 3（目標達成） | 15 | 6 分 |
 | `fin-fx` | 為替・デリバティブ | 2 | 後回し | `fin-tvm` | なし | 0 → 2 | 10 | 5 分 |

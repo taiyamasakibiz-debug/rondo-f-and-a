@@ -1,4 +1,6 @@
 import type { ProblemTemplate, Topic } from '@/engine/types'
+import { bottleneckMix } from './_private/cvp/bottleneck-mix'
+import { mutuallyExclusive } from './_private/npv/mutually-exclusive'
 import { investmentAndFunding } from './_private/case4/investment-and-funding'
 import { peerAndPriceCut } from './_private/case4/peer-and-price-cut'
 import { replacementFunding } from './_private/case4/replacement-funding'
@@ -54,6 +56,9 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   fixedAssetSale,
   prepaidExpense,
   badDebtWriteOff,
+  // CVP・投資の追加（過去問の構造を参考にしたもの。公開しない）
+  bottleneckMix,
+  mutuallyExclusive,
   // セグメント別・意思決定（過去問の構造を参考にしたもの。公開しない）
   storeClosure,
   specialOrder,
