@@ -232,8 +232,12 @@ describe('記述の自己採点', () => {
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
     expect(await screen.findByText(/点（キーワードによる目安）/)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('radio', { name: /〇 書けた/ }))
+    await userEvent.click(screen.getByRole('button', { name: /〇 書けた/ }))
     expect(await screen.findByText(/自己採点 〇/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /〇 書けた/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     expect(screen.getAllByRole('status')[0]).toHaveTextContent('2 / 4 点')
     await vi.waitFor(() => {
       const [attempt] = liveAttempts(useProgressStore.getState().attempts)
@@ -242,7 +246,7 @@ describe('記述の自己採点', () => {
     })
 
     // 選び直せる
-    await userEvent.click(screen.getByRole('radio', { name: /✕ 書けなかった/ }))
+    await userEvent.click(screen.getByRole('button', { name: /✕ 書けなかった/ }))
     await vi.waitFor(() => {
       const [attempt] = liveAttempts(useProgressStore.getState().attempts)
       expect(attempt).toMatchObject({ earned: 0 })

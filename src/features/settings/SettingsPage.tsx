@@ -150,8 +150,9 @@ function ScheduleSection() {
         <span className="font-ja text-[17px] font-bold tracking-ja">
           {label.name}
           {daysLeft !== null && endsOn && (
-            <span className="ml-3 text-label font-normal text-ink-muted tabular-nums">
-              {endsOn} まで あと {daysLeft} 日
+            <span className="block text-label font-normal text-ink-muted tabular-nums sm:ml-3 sm:inline">
+              {endsOn.replaceAll('-', '.')} まで{' '}
+              <span className="whitespace-nowrap">あと {daysLeft} 日</span>
             </span>
           )}
         </span>

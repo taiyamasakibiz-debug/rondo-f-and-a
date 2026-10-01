@@ -95,20 +95,26 @@ function Exam({ tier }: { tier: Tier }) {
     <>
       {header}
       <div className="flex flex-col gap-8">
-        <dl className="grid gap-4 sm:grid-cols-3">
+        {/* 値が短いので、スマホでも横 3 列に並べる */}
+        <dl className="grid grid-cols-3 gap-2 sm:gap-4">
           {[
             ['問題数', `${plan.items.length} 問`],
             ['制限時間', `${plan.timeLimitMs / 60_000} 分`],
             ['合格ライン', `${Math.round(rule.passRatio * 100)}%`],
           ].map(([label, value]) => (
-            <div key={label} className="flex flex-col gap-1 rounded-md bg-fog p-5">
+            <div key={label} className="flex flex-col gap-1 rounded-md bg-fog p-3 sm:p-5">
               <dt className="text-caption text-ink-muted">{label}</dt>
-              <dd className="text-[28px] font-bold tracking-snug tabular-nums">{value}</dd>
+              <dd className="text-[22px] font-bold tracking-snug tabular-nums sm:text-[28px]">
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
         <ul className="flex list-disc flex-col gap-1 pl-5 text-body-sm text-ink-body">
-          <li>出題の範囲：{unitNames.join('・')}（単元をまたいで出ます）</li>
+          <li>
+            出題の範囲：{unitNames.join('・')}
+            {unitNames.length > 1 && '（単元をまたいで出ます）'}
+          </li>
           {hasWritten && (
             <li>
               記述の小問は、本番と同じく時間内に書きますが、自動の採点は目安なので、合否の計算には含めません。

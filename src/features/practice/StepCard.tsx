@@ -1,4 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useId } from 'react'
 import {
   SELF_GRADE_RATIO,
   type SelfGrade,
@@ -423,20 +424,21 @@ function SelfGradeButtons({
   selected?: SelfGrade
   onSelect: (grade: SelfGrade) => void
 }) {
+  const labelId = useId()
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-[13px] font-bold tracking-[0.1em]" id="self-grade-label">
+      <span className="text-[13px] font-bold tracking-[0.1em]" id={labelId}>
         模範解答と見比べて、自己採点
       </span>
-      <div role="radiogroup" aria-labelledby="self-grade-label" className="flex flex-wrap gap-2">
+      {/* 押したものが選ばれた状態になるトグルボタン（矢印キーで動かすラジオボタンではない） */}
+      <div role="group" aria-labelledby={labelId} className="flex flex-wrap gap-2">
         {SELF_GRADE_OPTIONS.map(({ grade, label }) => {
           const active = selected === grade
           return (
             <button
               key={grade}
               type="button"
-              role="radio"
-              aria-checked={active}
+              aria-pressed={active}
               onClick={() => onSelect(grade)}
               className={cn(
                 'rounded-pill border px-4 py-2 text-[13px] font-bold tracking-[0.05em] transition-colors',
