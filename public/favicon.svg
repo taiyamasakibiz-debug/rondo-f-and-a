@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
   <title>Rondo</title>
   <rect width="1024" height="1024" rx="228" fill="#121213"/>
-  <circle cx="512" cy="512" r="250" stroke="#fff" stroke-width="84"/>
-  <circle cx="688.8" cy="335.2" r="98" fill="#121213"/>
-  <circle cx="688.8" cy="335.2" r="74" fill="#eb805e"/>
+  <circle cx="512" cy="512" r="258" stroke="#fff" stroke-width="124"/>
+  <circle cx="694" cy="330" r="136" fill="#121213"/>
+  <circle cx="694" cy="330" r="104" fill="#eb805e"/>
 </svg>
