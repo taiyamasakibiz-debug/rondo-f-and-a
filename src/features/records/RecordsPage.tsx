@@ -118,20 +118,35 @@ function CourseSection() {
   return (
     <section>
       <SectionHeading number="02" en="Course" ja="学習コース" />
-      <div className="mb-6 rounded-md bg-fog p-6">
-        {course.nextUnit && current ? (
-          <p className="font-ja text-[15px] tracking-ja">
-            いまは <strong>Stage {current.stage.id}</strong>。次は{' '}
-            <strong>{course.nextUnit.unit.name}</strong>
-            {course.nextUnit.state === 'learning' ? 'のつづき' : 'から'}です。
+      <div className="mb-6 grid gap-6 md:grid-cols-[1fr_2fr]">
+        <KeyNumber
+          label="COURSE LEVEL"
+          value={course.level.level}
+          unit="/ 10"
+          note={
+            course.level.nextPoints === null
+              ? '最大レベル'
+              : `定着した単元の点 ${course.level.points} / ${course.level.maxPoints}。次のレベルまで あと ${course.level.nextPoints - course.level.points} 点（Stage 1 の単元は 1 点、Stage 2 は 2 点、Stage 3 は 3 点）`
+          }
+        />
+        <div className="flex flex-col justify-center gap-2 rounded-md bg-fog p-6">
+          {course.nextUnit && current ? (
+            <p className="font-ja text-[15px] tracking-ja">
+              いまは <strong>Stage {current.stage.id}</strong>。次は{' '}
+              <strong>{course.nextUnit.unit.name}</strong>
+              {course.nextUnit.state === 'learning' ? 'のつづき' : 'から'}です。
+            </p>
+          ) : (
+            <p className="font-ja text-[15px] tracking-ja">
+              {current
+                ? `Stage ${current.stage.id} の単元を、間を空けて解き直すと定着になります。`
+                : 'いま取り組める単元は、すべて定着しました。'}
+            </p>
+          )}
+          <p className="text-caption text-ink-muted">
+            レベルは、一度定着した単元の点で決まります。要復習になっても下がりません。
           </p>
-        ) : (
-          <p className="font-ja text-[15px] tracking-ja">
-            {current
-              ? `Stage ${current.stage.id} の単元を、間を空けて解き直すと定着になります。`
-              : 'いま取り組める単元は、すべて定着しました。'}
-          </p>
-        )}
+        </div>
       </div>
       <div className="flex flex-col gap-10">
         {course.stages.map((entry) => (
@@ -196,6 +211,10 @@ function UnitRow({ progress }: { progress: UnitProgress }) {
             <span className="ml-3">
               定着 {progress.retention === null ? '—' : `${Math.round(progress.retention * 100)}%`}
             </span>
+            {/* 速さは、序盤は見せない（解き方を身につける前に時間を気にさせない）。Stage 3 から */}
+            {unit.stage === 3 && progress.speed !== null && (
+              <span className="ml-3">速さ {progress.speed.toFixed(1)} 倍</span>
+            )}
           </span>
         )}
         <StateTag state={state} />

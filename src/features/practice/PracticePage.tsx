@@ -13,7 +13,8 @@ import { findLab } from '@/features/labs/labs'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { findTemplate, templatesForTopic } from '@/problems'
 import { dailyPracticePath } from '@/progress/daily'
-import { levelFromXp, topicProgress, xpForAttempt } from '@/progress/level'
+import { levelFromXp, topicProgress } from '@/progress/level'
+import { nextAttemptXp } from '@/progress/xp'
 import { useProgressStore } from '@/progress/store'
 import { computeStreak } from '@/progress/streak'
 import { AnswerFeedback } from './AnswerFeedback'
@@ -104,7 +105,13 @@ function Practice({
     const store = useProgressStore.getState()
     const before = topicProgress(store.attempts, topic)
     const streakBefore = computeStreak(store.attempts, store.settings, new Date())
-    const xp = xpForAttempt(graded)
+    const xp = nextAttemptXp(store.attempts, {
+      templateId: template.id,
+      earned: graded.earned,
+      total: graded.total,
+      allCorrect: graded.allCorrect,
+      answeredAt: new Date().toISOString(),
+    })
     setReward({ xp, before, after: levelFromXp(before.xp + xp) })
     try {
       await recordAttempt({

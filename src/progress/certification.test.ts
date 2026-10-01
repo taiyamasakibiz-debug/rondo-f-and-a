@@ -49,10 +49,12 @@ function exam(tier: Tier, scores: number[], id = `exam-${tier}-${(nextId += 1)}`
   )
 }
 
-/** Lv.n に届くだけの練習の記録（全問正解 1 回で 15 XP） */
+/** Lv.n に届くだけの練習の記録（全問正解 1 回で 15 XP。型を変えて、XP の上限に当たらないようにする） */
 function practiceToLevel(level: number) {
   const xp = LEVEL_THRESHOLDS[level - 1]!
-  return Array.from({ length: Math.ceil(xp / 15) }, () => attempt())
+  return Array.from({ length: Math.ceil(xp / 15) }, (_, i) =>
+    attempt({ templateId: `practice.${i}` }),
+  )
 }
 
 describe('examResults', () => {

@@ -280,7 +280,8 @@ describe('正解とレベルアップの演出', () => {
     const at = new Date(Date.now() - 86_400_000 * 3).toISOString()
     const attempts = [1, 2, 3, 4, 5].map((seed) => ({
       id: `journal-${seed}`,
-      templateId: 'journal.credit-sale',
+      // 型を変えて、同じ型の連続正解による XP の上限に当たらないようにする
+      templateId: `journal.past-${seed}`,
       topic: 'journal' as const,
       seed,
       earned: 1,

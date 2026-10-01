@@ -2,10 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { PROBLEM_TEMPLATES } from '@/problems'
 import { STAGES, UNITS, findUnit } from '@/course/units'
 import { type Attempt, DEFAULT_SETTINGS } from './types'
-import { computeCourse } from './units'
+import { COURSE_LEVEL_THRESHOLDS, computeCourse, courseLevel } from './units'
 
 let nextId = 0
-function attempt(templateId: string, day: string, earned = 5, total = 5): Attempt {
+function attempt(
+  templateId: string,
+  day: string,
+  earned = 5,
+  total = 5,
+  durationMs = 60_000,
+): Attempt {
   nextId += 1
   const [y, m, d] = day.split('-').map(Number)
   const at = new Date(y!, m! - 1, d!, 12).toISOString()
@@ -18,7 +24,7 @@ function attempt(templateId: string, day: string, earned = 5, total = 5): Attemp
     total,
     allCorrect: earned === total,
     steps: [],
-    durationMs: 60_000,
+    durationMs,
     answeredAt: at,
     createdAt: at,
     updatedAt: at,
@@ -157,5 +163,59 @@ describe('Stage と次の単元', () => {
     const started = attempt(findUnit('mgt-cvp')!.templateIds[0]!, '2026-10-10')
     const course = computeCourse([...bsDone, started], DEFAULT_SETTINGS, at(10, 11))
     expect(course.nextUnit?.unit.id).toBe('mgt-cvp')
+  })
+})
+
+describe('速さ', () => {
+  it('直近 5 回の所要時間の中央値を、想定時間（CVP は 5 分）で割る', () => {
+    const [first] = cvpIds
+    const minutes = [2, 4, 6, 8, 10, 30]
+    const attempts = minutes.map((m, i) => attempt(first!, `2026-10-0${i + 1}`, 5, 5, m * 60_000))
+    // 直近 5 回は 4・6・8・10・30 分。中央値は 8 分
+    const course = computeCourse(attempts, DEFAULT_SETTINGS, at(10, 7))
+    const unit = course.stages.flatMap((s) => s.units).find((p) => p.unit.id === 'mgt-cvp')!
+    expect(unit.speed).toBeCloseTo(8 / 5)
+  })
+
+  it('解いていなければ null', () => {
+    const course = computeCourse([], DEFAULT_SETTINGS, at(10, 1))
+    expect(course.stages[0]!.units[0]!.speed).toBeNull()
+  })
+})
+
+describe('コースレベル', () => {
+  it('単元の点の合計（Stage の番号）が、レベルの最大の点と一致する', () => {
+    const total = UNITS.reduce((sum, unit) => sum + unit.stage, 0)
+    expect(total).toBe(COURSE_LEVEL_THRESHOLDS[COURSE_LEVEL_THRESHOLDS.length - 1])
+  })
+
+  it('点からレベルを出す', () => {
+    expect(courseLevel(0)).toMatchObject({ level: 1, nextPoints: 1 })
+    expect(courseLevel(5)).toMatchObject({ level: 6, nextPoints: 7 })
+    expect(courseLevel(16)).toMatchObject({ level: 10, nextPoints: null })
+    expect(courseLevel(99).level).toBe(10)
+  })
+
+  it('何も解いていなければ Lv.1', () => {
+    expect(computeCourse([], DEFAULT_SETTINGS, at(10, 1)).level).toMatchObject({
+      level: 1,
+      points: 0,
+    })
+  })
+
+  it('単元が定着すると上がり、要復習になっても下がらない', () => {
+    const attempts = [...allTemplates('2026-10-01'), ...allTemplates('2026-10-09')]
+    const settled = computeCourse(attempts, DEFAULT_SETTINGS, at(10, 10))
+    expect(stateOf(attempts, at(10, 10))).toBe('consolidated')
+    expect(settled.level).toMatchObject({ level: 2, points: 1 })
+
+    const later = computeCourse(attempts, DEFAULT_SETTINGS, at(12, 31))
+    expect(stateOf(attempts, at(12, 31))).toBe('review')
+    expect(later.level).toMatchObject({ level: 2, points: 1 })
+  })
+
+  it('定着していない単元は点にならない', () => {
+    const learning = computeCourse(allTemplates('2026-10-01'), DEFAULT_SETTINGS, at(10, 2))
+    expect(learning.level.points).toBe(0)
   })
 })

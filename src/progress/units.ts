@@ -29,7 +29,39 @@ export const UNIT_RULES = {
   lapseThreshold: 0.6,
   /** 要復習：定着したあと、これだけ解かないと */
   idleDays: 30,
+  /** 速さ：直近何回の所要時間の中央値を見るか */
+  speedWindow: 5,
 } as const
+
+/**
+ * コースレベル（docs/COURSE.md §7）。定着した単元の点（Stage 1 は 1 点、Stage 2 は 2 点、Stage 3 は 3 点）の
+ * 合計から決める。一度定着した単元は、要復習になっても点が残るので、レベルは下がらない。
+ */
+export const COURSE_LEVEL_THRESHOLDS = [0, 1, 2, 3, 4, 5, 7, 9, 12, 16] as const
+
+export type CourseLevel = {
+  level: number
+  points: number
+  /** 次のレベルに必要な点（最大レベルなら null） */
+  nextPoints: number | null
+  maxPoints: number
+}
+
+export function courseLevel(points: number): CourseLevel {
+  let index = 0
+  while (
+    index + 1 < COURSE_LEVEL_THRESHOLDS.length &&
+    points >= COURSE_LEVEL_THRESHOLDS[index + 1]!
+  ) {
+    index += 1
+  }
+  return {
+    level: index + 1,
+    points,
+    nextPoints: COURSE_LEVEL_THRESHOLDS[index + 1] ?? null,
+    maxPoints: COURSE_LEVEL_THRESHOLDS[COURSE_LEVEL_THRESHOLDS.length - 1]!,
+  }
+}
 
 export type UnitProgress = {
   unit: Unit
@@ -42,6 +74,10 @@ export type UnitProgress = {
   accuracy: number | null
   /** 間を空けたあとの得点率（0〜1）。間を空けて解いたことがなければ null */
   retention: number | null
+  /** 速さ：直近 5 回の所要時間の中央値 ÷ 想定時間（1.0 以下が目標）。まだ解いていなければ null */
+  speed: number | null
+  /** 一度でも定着したことがあるか（要復習になっても残る。コースレベルの点に使う） */
+  achieved: boolean
   /** 前提の単元がすべて定着（または準備中）か */
   prerequisitesMet: boolean
 }
@@ -66,8 +102,21 @@ function weightedAccuracy(attempts: readonly Attempt[]): number | null {
   return weights === 0 ? null : weighted / weights
 }
 
+/** 速さ：直近 5 回の所要時間の中央値を、想定時間で割る */
+function speedOf(unit: Unit, own: readonly Attempt[]): number | null {
+  const recent = own
+    .slice(-UNIT_RULES.speedWindow)
+    .map((attempt) => attempt.durationMs)
+    .sort((a, b) => a - b)
+  if (recent.length === 0) return null
+  const mid = Math.floor(recent.length / 2)
+  const median = recent.length % 2 === 1 ? recent[mid]! : (recent[mid - 1]! + recent[mid]!) / 2
+  return median / (unit.expectedMinutes * 60_000)
+}
+
 type Evaluation = {
   state: Exclude<UnitState, 'preparing'>
+  achieved: boolean
   attemptedCount: number
   accuracy: number | null
   retention: number | null
@@ -81,7 +130,13 @@ function evaluateUnit(
   today: DayKey,
 ): Evaluation {
   if (own.length === 0) {
-    return { state: 'untouched', attemptedCount: 0, accuracy: null, retention: null }
+    return {
+      state: 'untouched',
+      achieved: false,
+      attemptedCount: 0,
+      accuracy: null,
+      retention: null,
+    }
   }
 
   const lastDayByTemplate = new Map<string, DayKey>()
@@ -131,7 +186,7 @@ function evaluateUnit(
   const idle = daysBetween(lastDay, today) >= UNIT_RULES.idleDays
   const state: Evaluation['state'] =
     review || (achieved && idle) ? 'review' : meets ? 'consolidated' : 'learning'
-  return { state, attemptedCount: lastDayByTemplate.size, accuracy, retention }
+  return { state, achieved, attemptedCount: lastDayByTemplate.size, accuracy, retention }
 }
 
 export type StageProgress = {
@@ -150,6 +205,7 @@ export type CourseProgress = {
   currentStage: StageId | null
   /** 次に取り組む単元（現在の Stage の中で、前提が済んだ学習中 → 未着手の順） */
   nextUnit: UnitProgress | null
+  level: CourseLevel
 }
 
 export function computeCourse(
@@ -175,6 +231,8 @@ export function computeCourse(
       attempts: own.length,
       accuracy: evaluation?.accuracy ?? null,
       retention: evaluation?.retention ?? null,
+      speed: speedOf(unit, own),
+      achieved: evaluation?.achieved ?? false,
       prerequisitesMet: true,
     })
   }
@@ -216,5 +274,9 @@ export function computeCourse(
       )
       .sort((a, b) => rank(a.state) - rank(b.state))[0] ?? null
 
-  return { stages, currentStage: current?.stage.id ?? null, nextUnit }
+  const points = [...byUnit.values()]
+    .filter((progress) => progress.achieved)
+    .reduce((sum, progress) => sum + progress.unit.stage, 0)
+
+  return { stages, currentStage: current?.stage.id ?? null, nextUnit, level: courseLevel(points) }
 }
