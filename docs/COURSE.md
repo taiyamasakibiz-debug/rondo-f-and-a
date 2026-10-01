@@ -198,7 +198,7 @@
 - [x] 4. 認定を Stage のゲートにする。制限時間を想定時間から出す（画面は記録の Course と `/exam/:tier`）
 - [x] 5. 目標月と試験日の設定、局面ごとの復習の切り替え（`src/progress/phase.ts`、設定の Schedule）
 - [ ] 6. 導入期のブロック練習、想定時間の補正
-- [ ] 7. 新しい単元の問題（`fin-tvm`、`mgt-seg`、`case4-int`、`fin-val`、`fin-fx`）
+- [ ] 7. 新しい単元の問題（`fin-tvm`、`mgt-seg`、`case4-int`、`fin-val`、`fin-fx`、`fin-npv` に 1 型）。NotebookLM への依頼書：[`prompts/notebooklm-new-units-brief.md`](prompts/notebooklm-new-units-brief.md)
 
 ## 11. 未決
 

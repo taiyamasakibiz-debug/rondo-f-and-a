@@ -7,6 +7,7 @@
 - 学習コース・レベル・認定の設計：[`docs/COURSE.md`](docs/COURSE.md)
 - デザインシステム（Tessera）のルール：[`docs/design-system/README.md`](docs/design-system/README.md)
 - 問題の下書きを NotebookLM で作るプロンプト：[`docs/prompts/notebooklm-problem-draft.md`](docs/prompts/notebooklm-problem-draft.md)
+- まだ問題がない単元（事例Ⅳ総合・時間価値・セグメント・企業価値・為替など）の依頼書：[`docs/prompts/notebooklm-new-units-brief.md`](docs/prompts/notebooklm-new-units-brief.md)
 
 ## できること
 
