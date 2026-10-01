@@ -3,7 +3,7 @@ import type { ProblemTemplate, Topic } from '@/engine/types'
 import { type DayKey, dayKey } from './day'
 import { topicProgress } from './level'
 import { buildReviewCards, dueCards } from './review'
-import type { Attempt, Settings } from './types'
+import { type Attempt, type Settings, liveAttempts } from './types'
 
 /** なぜ今日この問題が選ばれたか */
 export type DailyReason =
@@ -44,7 +44,7 @@ export function buildDaily(
   now: Date,
 ): DailyPlan {
   const today = dayKey(now, settings.dayStartHour)
-  const live = attempts.filter((attempt) => !attempt.deletedAt)
+  const live = liveAttempts(attempts)
   const history = live.filter(
     (attempt) => dayKey(new Date(attempt.answeredAt), settings.dayStartHour) < today,
   )

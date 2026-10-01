@@ -1,5 +1,5 @@
-import { ArrowRight } from 'lucide-react'
 import { Link, useParams } from 'react-router'
+import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
@@ -41,12 +41,7 @@ export function LabPage() {
             <Button asChild size="lg" className="pr-2">
               <Link to={`/labs/${lab.id}/practice`}>
                 問題を解く
-                <span
-                  data-icon="inline-end"
-                  className="flex size-10 items-center justify-center rounded-pill bg-on-ink text-ink"
-                >
-                  <ArrowRight className="size-4" aria-hidden />
-                </span>
+                <ArrowDot />
               </Link>
             </Button>
             {lab.id === 'journal' && (

@@ -1,11 +1,4 @@
-/** 同じ seed なら毎回同じ線になる乱数 */
-function createRandom(seed: number) {
-  let state = seed >>> 0
-  return () => {
-    state = (state * 1664525 + 1013904223) % 4294967296
-    return state / 4294967296
-  }
-}
+import { seededRandom } from '@/lib/seededRandom'
 
 export type Line = {
   id: string
@@ -30,7 +23,7 @@ const SAME_TILT_CHANCE = 0.2
  * - 束の中の線は、端に向かって少しずつ広がる
  */
 export function buildLines(width: number, height: number, seed: number): Line[] {
-  const random = createRandom(seed)
+  const random = seededRandom(seed)
   const clusters = Math.max(3, Math.round(height / CLUSTER_SPACING))
   const lines: Line[] = []
   let tilt = random() < 0.5 ? 1 : -1

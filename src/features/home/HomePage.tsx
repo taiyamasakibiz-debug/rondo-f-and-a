@@ -1,5 +1,5 @@
-import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
+import { ArrowDot } from '@/components/ArrowDot'
 import { useDocumentTitle } from '@/components/useDocumentTitle'
 import { Button } from '@/components/ui/button'
 import { DailyList } from '@/features/daily/DailyList'
@@ -60,12 +60,7 @@ export function HomePage() {
                     ? 'はじめる'
                     : 'つづける'}
                 {/* 画面の中でオレンジを置くのはここだけ（Tessera：オレンジは点） */}
-                <span
-                  data-icon="inline-end"
-                  className="flex size-10 items-center justify-center rounded-pill bg-ember text-[#121213]"
-                >
-                  <ArrowRight className="size-4" aria-hidden />
-                </span>
+                <ArrowDot accent />
               </Link>
             </Button>
           )}

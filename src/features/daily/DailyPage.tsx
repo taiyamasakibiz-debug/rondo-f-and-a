@@ -1,6 +1,6 @@
-import { ArrowRight } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
+import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { feedbackLater } from '@/feedback'
@@ -49,12 +49,7 @@ export function DailyPage() {
             <Button asChild size="lg" className="self-start pr-2">
               <Link to={dailyPracticePath(next)}>
                 {plan.doneCount === 0 ? 'はじめる' : 'つづける'}
-                <span
-                  data-icon="inline-end"
-                  className="flex size-10 items-center justify-center rounded-pill bg-on-ink text-ink"
-                >
-                  <ArrowRight className="size-4" aria-hidden />
-                </span>
+                <ArrowDot />
               </Link>
             </Button>
           )}

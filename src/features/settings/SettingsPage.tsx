@@ -20,6 +20,7 @@ import {
 } from '@/data/backup'
 import { useLedgerStore } from '@/ledger/store'
 import { useProgressStore } from '@/progress/store'
+import { liveAttempts } from '@/progress/types'
 import { FeedbackPanel } from './FeedbackPanel'
 import { SyncPanel } from './SyncPanel'
 
@@ -127,9 +128,7 @@ type Pending = { backup: Backup; fileName: string } | null
 
 function DataSection() {
   const status = useProgressStore((state) => state.status)
-  const attemptCount = useProgressStore(
-    (state) => state.attempts.filter((attempt) => !attempt.deletedAt).length,
-  )
+  const attemptCount = useProgressStore((state) => liveAttempts(state.attempts).length)
   const ledgerStatus = useLedgerStore((state) => state.status)
   // 書き出し・読み込みは、解答記録とフリーモードの両方を読み込み終えてから
   const ready = status === 'ready' && ledgerStatus === 'ready'
@@ -154,7 +153,7 @@ function DataSection() {
     link.click()
     URL.revokeObjectURL(url)
     setMessage(
-      `解答記録 ${data.attempts.filter((a) => !a.deletedAt).length} 件と、フリーモードの仕訳 ${data.ledger.entries.length} 件を書き出しました。`,
+      `解答記録 ${liveAttempts(data.attempts).length} 件と、フリーモードの仕訳 ${data.ledger.entries.length} 件を書き出しました。`,
     )
   }
 

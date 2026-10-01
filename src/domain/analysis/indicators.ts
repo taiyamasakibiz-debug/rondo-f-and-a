@@ -178,12 +178,6 @@ export const INDICATORS: readonly IndicatorDefinition[] = [
   },
 ]
 
-export const INDICATOR_GROUP_LABELS: Record<IndicatorGroup, string> = {
-  profitability: '収益性',
-  efficiency: '効率性',
-  safety: '安全性',
-}
-
 export type AnalysisInput = {
   balanceSheet: BalanceSheet
   incomeStatement: IncomeStatement

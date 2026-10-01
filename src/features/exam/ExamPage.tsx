@@ -1,7 +1,7 @@
-import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { generateProblem } from '@/engine/generate'
@@ -142,6 +142,8 @@ function ExamRunner({
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [remainingMs, setRemainingMs] = useState(rule.timeLimitMs)
   const submitting = useRef(false)
+  // 時間切れになったか。採点の途中で時間切れになっても、終わったらテストを終える
+  const timedOut = useRef(false)
 
   const item = session.items[index]!
   const problem = useMemo(
@@ -167,7 +169,7 @@ function ExamRunner({
         exam: { id: session.id, tier, index, startedAt: session.startedAt },
       }).catch((error: unknown) => console.error('解答記録の保存に失敗しました', error))
       submitting.current = false
-      if (final || index + 1 >= session.items.length) {
+      if (final || timedOut.current || index + 1 >= session.items.length) {
         onFinish()
         return
       }
@@ -191,6 +193,7 @@ function ExamRunner({
       setRemainingMs(Math.max(0, left))
       if (left <= 0) {
         clearInterval(timer)
+        timedOut.current = true
         void submitRef.current(true)
       }
     }, 250)
@@ -296,12 +299,12 @@ function ExamResultView({ topic, tier, session }: { topic: Topic; tier: Tier; se
                 <span className="w-10 shrink-0 text-[13px] font-bold tracking-caps text-ink-muted">
                   Q{index + 1}
                 </span>
-                <span className="flex-1 text-[15px] font-medium tracking-text group-hover:text-ember-text">
+                <span className="min-w-0 flex-1 text-[15px] font-medium tracking-text break-words group-hover:text-ember-text">
                   {title}
                 </span>
                 {attempt ? (
                   <>
-                    <span className="text-caption text-ink-muted tabular-nums">
+                    <span className="shrink-0 text-caption text-ink-muted tabular-nums">
                       {attempt.earned} / {attempt.total} 点
                     </span>
                     <Mark correct={attempt.allCorrect} />
@@ -321,16 +324,5 @@ function ExamResultView({ topic, tier, session }: { topic: Topic; tier: Tier; se
         <Link to={`/labs/${topic}`}>ラボに戻る</Link>
       </Button>
     </div>
-  )
-}
-
-function ArrowDot() {
-  return (
-    <span
-      data-icon="inline-end"
-      className="flex size-10 items-center justify-center rounded-pill bg-on-ink text-ink"
-    >
-      <ArrowRight className="size-4" aria-hidden />
-    </span>
   )
 }

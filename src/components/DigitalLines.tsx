@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { useMemo } from 'react'
+import { seededRandom } from '@/lib/seededRandom'
 
 type DigitalLinesProps = {
   /** 線の本数 */
@@ -7,15 +8,6 @@ type DigitalLinesProps = {
   /** 同じ seed なら毎回同じ線になる */
   seed?: number
   className?: string
-}
-
-// 乱数を seed で固定して、再描画のたびに線が変わらないようにする
-function createRandom(seed: number) {
-  let state = seed
-  return () => {
-    state = (state * 1664525 + 1013904223) % 4294967296
-    return state / 4294967296
-  }
 }
 
 const WIDTH = 1200
@@ -29,7 +21,7 @@ export function DigitalLines({ count = 14, seed = 7, className }: DigitalLinesPr
   const reduceMotion = useReducedMotion()
 
   const paths = useMemo(() => {
-    const random = createRandom(seed)
+    const random = seededRandom(seed)
     return Array.from({ length: count }, (_, i) => {
       const startY = HEIGHT * (0.5 + random() * 0.25)
       const endY = HEIGHT * (0.05 + random() * 0.3)

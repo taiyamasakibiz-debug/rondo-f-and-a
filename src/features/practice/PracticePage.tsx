@@ -1,7 +1,7 @@
-import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type FormEvent, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { type Problem, generateProblem } from '@/engine/generate'
@@ -93,6 +93,8 @@ function Practice({
   const { template, params } = problem
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    // 採点済みなら、もう一度記録しない（入力欄で Enter を押したときなど）
+    if (result) return
     const graded = gradeProblem(problem, inputs)
     setResult(graded)
     // 採点の瞬間の手応え（効果音）。ボタンを押した操作の中で鳴らす
@@ -232,17 +234,5 @@ function Practice({
         )}
       </div>
     </>
-  )
-}
-
-/** Tessera の主ボタンの右端にある丸い矢印 */
-function ArrowDot() {
-  return (
-    <span
-      data-icon="inline-end"
-      className="flex size-10 items-center justify-center rounded-pill bg-on-ink text-ink"
-    >
-      <ArrowRight className="size-4" aria-hidden />
-    </span>
   )
 }

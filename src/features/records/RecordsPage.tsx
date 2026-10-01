@@ -216,11 +216,14 @@ function MistakesSection() {
                   <span className="shrink-0 rounded-pill border border-line px-3 py-1 text-[11px] font-bold tracking-[0.1em]">
                     {lab?.nameEn.toUpperCase() ?? attempt.topic.toUpperCase()}
                   </span>
-                  <span className="flex-1 text-[15px] font-medium tracking-text group-hover:text-ember-text">
-                    {template?.title ?? attempt.templateId}
-                  </span>
-                  <span className="shrink-0 text-caption text-ink-muted tabular-nums">
-                    {attempt.earned} / {attempt.total} 点
+                  {/* スマホでは得点を題名の下に置き、横にはみ出さないようにする */}
+                  <span className="flex min-w-0 flex-1 flex-col gap-1 md:flex-row md:items-center md:gap-7">
+                    <span className="min-w-0 flex-1 text-[15px] font-medium tracking-text break-words group-hover:text-ember-text">
+                      {template?.title ?? attempt.templateId}
+                    </span>
+                    <span className="shrink-0 text-caption text-ink-muted tabular-nums">
+                      {attempt.earned} / {attempt.total} 点
+                    </span>
                   </span>
                   <span
                     className="flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink transition-colors group-hover:bg-ink group-hover:text-on-ink"

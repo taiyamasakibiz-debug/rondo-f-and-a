@@ -8,8 +8,6 @@ import type { Attempt } from './types'
  *   時間がたつだけでは下がらない（忘れかけは復習スケジュールの期日で表す）
  */
 
-export const MAX_LEVEL = 10
-
 /** Lv.n になるのに必要な累計 XP（index 0 が Lv.1） */
 export const LEVEL_THRESHOLDS = [0, 30, 80, 150, 240, 350, 480, 630, 800, 1000] as const
 

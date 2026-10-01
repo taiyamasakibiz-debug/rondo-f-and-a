@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ledgerAccountSchema, ledgerEntrySchema, type LedgerData } from '@/ledger/types'
-import { attemptSchema, settingsSchema } from '@/progress/types'
+import { attemptSchema, liveAttempts, settingsSchema } from '@/progress/types'
 import type { ProgressData } from './repository'
 
 /**
@@ -94,5 +94,5 @@ export function describeBackup(backup: Backup): string {
     backup.version === 2
       ? `フリーモードの科目 ${backup.ledger.accounts.length} 件・仕訳 ${backup.ledger.entries.length} 件`
       : 'フリーモードのデータは含まれていないため、今のまま残ります'
-  return `解答記録 ${backup.attempts.filter((a) => !a.deletedAt).length} 件と設定、${ledger}`
+  return `解答記録 ${liveAttempts(backup.attempts).length} 件と設定、${ledger}`
 }
