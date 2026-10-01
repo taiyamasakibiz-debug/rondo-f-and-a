@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { NavLink, Outlet, ScrollRestoration, useLocation, useSearchParams } from 'react-router'
+import { AmbientLines } from '@/components/AmbientLines'
 import { useTextInputFocused } from '@/components/useTextInputFocused'
 import { feedback } from '@/feedback'
 import { cn } from '@/lib/utils'
@@ -30,8 +31,11 @@ export function AppLayout() {
     )
   }
 
+  const isHome = location.pathname === '/'
+
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="relative flex min-h-dvh flex-col bg-background text-foreground">
+      <Backdrop key={isHome ? 'home' : 'page'} full={isHome} />
       {/* Tessera のナビ：半透明の白いピル */}
       <header className="sticky top-0 z-40 px-4 pt-4 md:px-6 md:pt-6">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-pill border border-line bg-white/60 px-6 backdrop-blur-md md:h-16 md:pr-2 md:pl-8">
@@ -58,7 +62,7 @@ export function AppLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-28 md:px-6 md:pt-14 md:pb-24">
+      <main className="relative mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-28 md:px-6 md:pt-14 md:pb-24">
         <motion.div
           key={location.pathname}
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -103,5 +107,33 @@ export function AppLayout() {
       {/* 画面を移ったら先頭から表示する（戻るときは元の位置に戻す） */}
       <ScrollRestoration />
     </div>
+  )
+}
+
+/**
+ * 背景の水色とデジタルライン。
+ * - ホーム：画面全体に敷き、スクロールしても動かない
+ * - ほかの画面：ページの最上部だけに敷き、下に行くほど自然に薄くする
+ */
+function Backdrop({ full }: { full: boolean }) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <motion.div
+      aria-hidden
+      data-testid={full ? 'backdrop-full' : 'backdrop-top'}
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        'pointer-events-none overflow-hidden',
+        full
+          ? 'fixed inset-0'
+          : 'absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black_35%,transparent)] md:h-[520px]',
+      )}
+    >
+      {/* sky-wash はいちばん濃い水色が下にあるので、上だけに敷くときは上下を反転して、濃い方を上にする */}
+      <div className={cn('absolute inset-0 bg-sky-wash', !full && '-scale-y-100')} />
+      <AmbientLines seed={full ? 7 : 13} className="absolute inset-0 size-full" />
+    </motion.div>
   )
 }

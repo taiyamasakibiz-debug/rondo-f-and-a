@@ -1,6 +1,5 @@
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
-import { DigitalLines } from '@/components/DigitalLines'
 import { useDocumentTitle } from '@/components/useDocumentTitle'
 import { Button } from '@/components/ui/button'
 import { DailyList } from '@/features/daily/DailyList'
@@ -20,8 +19,8 @@ export function HomePage() {
   const next = nextDailyItem(plan)
   return (
     <>
-      <section className="relative -mx-4 mb-16 overflow-hidden bg-sky-wash px-5 py-16 md:mx-0 md:rounded-xl md:px-16 md:py-24">
-        <DigitalLines className="pointer-events-none absolute inset-0 size-full" />
+      {/* 水色とラインは、画面全体の背景（AppLayout の Backdrop）に敷いている */}
+      <section className="relative mb-16 px-1 py-10 md:px-16 md:py-20">
         <div className="relative flex flex-col gap-6">
           <p className="font-ja text-lg font-bold tracking-ja text-ink-muted md:text-2xl">
             今日のデイリー
