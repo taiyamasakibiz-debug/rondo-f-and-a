@@ -233,7 +233,7 @@ function DataSection() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `luminous-insight-${data.exportedAt.slice(0, 10)}.json`
+    link.download = `rondo-f-and-a-${data.exportedAt.slice(0, 10)}.json`
     link.click()
     URL.revokeObjectURL(url)
     setMessage(

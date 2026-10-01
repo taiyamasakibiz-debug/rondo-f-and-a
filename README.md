@@ -67,4 +67,4 @@ src/
 ## デプロイ
 
 Cloudflare Workers（静的アセット）。設定は [`wrangler.jsonc`](wrangler.jsonc)。
-main への push で本番に、ほかのブランチはプレビューにデプロイされる。Worker の名前は `luminous-insights` のまま（名前を変えると URL が変わり、ブラウザに保存した記録と同期のデータが見えなくなるため）。
+main への push で本番に、ほかのブランチはプレビューにデプロイされる。Worker の名前は `rondo-f-and-a`（URL は `rondo-f-and-a.<アカウント>.workers.dev`）。ブラウザの保存領域やバックアップの識別子など、内部の名前は `luminous-insight` のまま（変えると、書き出したバックアップを読み込めなくなるため）。

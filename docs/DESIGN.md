@@ -445,7 +445,7 @@ domain はどこにも依存しない
 ## 11. 未決事項
 - [x] アプリ名：Rondo F&A（2026-10-01）
 - [ ] ラボの名前（仕訳ラボ、分析ラボ など）の確定
-- [x] v2 の置き場所と v1 の扱い：v2 は新しいリポジトリ `rondo-f-and-a` の main にした（2026-10-01）。v1 は `Luminous-Insights` の main と GitHub Pages にそのまま残す。Cloudflare の Worker（`luminous-insights`）は、つなぐリポジトリを `rondo-f-and-a` の main に付け替える
+- [x] v2 の置き場所と v1 の扱い：v2 は新しいリポジトリ `rondo-f-and-a` の main にした（2026-10-01）。v1 は `Luminous-Insights` の main と GitHub Pages にそのまま残す。Cloudflare は、Worker `rondo-f-and-a` を新しく作ってこのリポジトリの main につなぐ（URL も rondo-f-and-a に変える。前の Worker `luminous-insights` の記録と同期のデータは引き継がない）
 - [x] 認定テストの問題数、制限時間、合格ライン、受けられる条件：COURSE.md §8 で決めた（2026-10-01）
 - [ ] 1 次試験の選択式の問題を、どこまでアプリに入れるか（COURSE.md §11）
 
