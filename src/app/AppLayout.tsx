@@ -56,6 +56,7 @@ export function AppLayout() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={() => feedback('tap')}
                 className={(state) => cn(navLinkClass(state), 'px-5')}
               >
                 {item.label}

@@ -29,6 +29,20 @@ describe('ルーティング', () => {
     expect(screen.getByRole('link', { name: /CVP ラボ/ })).toBeInTheDocument()
   })
 
+  it('上のナビと下のタブのどちらで移動しても、タップの音を鳴らす', async () => {
+    const feedbackModule = await import('@/feedback')
+    const spy = vi.spyOn(feedbackModule, 'feedback')
+    await renderAt('/')
+    const [desktop, mobile] = [
+      screen.getByRole('navigation', { name: 'メインナビゲーション' }),
+      screen.getByRole('navigation', { name: 'メインナビゲーション（モバイル）' }),
+    ]
+    await userEvent.click(within(desktop).getByRole('link', { name: 'Labs' }))
+    await userEvent.click(within(mobile).getByRole('link', { name: 'Records' }))
+    expect(spy.mock.calls.filter(([name]) => name === 'tap')).toHaveLength(2)
+    spy.mockRestore()
+  })
+
   it('ラボのカードから各ラボに移動できる', async () => {
     await renderAt('/')
     await userEvent.click(screen.getByRole('link', { name: /投資ラボ/ }))
