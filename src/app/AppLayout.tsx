@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
+import { useTextInputFocused } from '@/components/useTextInputFocused'
 import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
 
@@ -16,6 +17,7 @@ export function AppLayout() {
   const [searchParams] = useSearchParams()
   // 別ウィンドウで開いたパネル（?window=1）は、ナビを省いて中身だけを見せる
   const windowMode = searchParams.get('window') === '1'
+  const typing = useTextInputFocused()
 
   if (windowMode) {
     return (
@@ -65,10 +67,14 @@ export function AppLayout() {
         </motion.div>
       </main>
 
-      {/* スマホは画面下のピル型タブで移動する。Tessera はアイコンを矢印だけにするため文字だけで示す */}
+      {/* スマホは画面下のピル型タブで移動する。Tessera はアイコンを矢印だけにするため文字だけで示す。
+          キーボードが出ている間は、スクロールでずれて入力の邪魔になるので隠す */}
       <nav
         aria-label="メインナビゲーション（モバイル）"
-        className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-40 md:hidden"
+        className={cn(
+          'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-40 md:hidden',
+          typing && 'hidden',
+        )}
       >
         <ul className="grid grid-cols-4 rounded-pill border border-line bg-white/70 p-1.5 backdrop-blur-md">
           {NAV_ITEMS.map((item) => (
