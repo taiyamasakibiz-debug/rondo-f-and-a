@@ -4,6 +4,8 @@ import { certificationOf } from './certification'
 import { topicProgress } from './level'
 import { useProgressStore } from './store'
 import { computeStreak } from './streak'
+import { dayKey } from './day'
+import { phaseSummary } from './phase'
 import { computeCourse } from './units'
 
 /**
@@ -46,4 +48,11 @@ export function useCourse() {
     () => computeCourse(attempts, { dayStartHour }, now),
     [attempts, dayStartHour, now],
   )
+}
+
+/** 今日の局面（マスター期間・維持期間・直前期）と、その局面が終わるまでの日数 */
+export function usePhase() {
+  const settings = useProgressStore((state) => state.settings)
+  const now = useNow()
+  return useMemo(() => phaseSummary(dayKey(now, settings.dayStartHour), settings), [now, settings])
 }

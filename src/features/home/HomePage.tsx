@@ -6,13 +6,15 @@ import { DailyList } from '@/features/daily/DailyList'
 import { useDaily } from '@/features/daily/useDaily'
 import { LabCard } from '@/features/labs/LabCard'
 import { LABS } from '@/features/labs/labs'
-import { useStreak } from '@/progress/hooks'
+import { usePhase, useStreak } from '@/progress/hooks'
+import { PHASE_LABELS } from '@/progress/phase'
 import { dailyPracticePath, nextDailyItem } from '@/progress/daily'
 import { useProgressStore } from '@/progress/store'
 
 export function HomePage() {
   useDocumentTitle(undefined)
   const streak = useStreak()
+  const phase = usePhase()
   const dailyGoal = useProgressStore((state) => state.settings.dailyGoal)
   const status = useProgressStore((state) => state.status)
   const plan = useDaily()
@@ -48,6 +50,19 @@ export function HomePage() {
               <dd className="text-[28px] font-bold tracking-snug tabular-nums">
                 {streak.current}
                 <span className="ml-2 font-ja text-[15px] text-ink-body">日</span>
+              </dd>
+            </div>
+            <div className="flex flex-col gap-1">
+              <dt className="text-[13px] font-bold tracking-caps text-ink-muted">PHASE</dt>
+              <dd className="flex items-baseline gap-2">
+                <span className="font-ja text-[17px] font-bold tracking-ja">
+                  {PHASE_LABELS[phase.phase].name}
+                </span>
+                {phase.daysLeft !== null && (
+                  <span className="font-ja text-[13px] text-ink-muted tabular-nums">
+                    あと {phase.daysLeft} 日
+                  </span>
+                )}
               </dd>
             </div>
           </dl>

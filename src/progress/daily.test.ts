@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ProblemTemplate, Topic } from '@/engine/types'
+import { PROBLEM_TEMPLATES } from '@/problems'
 import { buildDaily, dailyPracticePath, nextDailyItem } from './daily'
 import { type Attempt, DEFAULT_SETTINGS } from './types'
 
@@ -152,5 +153,89 @@ describe('buildDaily', () => {
     expect(dailyPracticePath({ templateId: 'cvp.a', topic: 'cvp', seed: 12, reason: 'new' })).toBe(
       '/labs/cvp/practice?template=cvp.a&seed=12&from=daily',
     )
+  })
+})
+
+describe('マスター期間のデイリー', () => {
+  it('復習が溜まっていても、新しい問題を 1 問は残す', () => {
+    const history = ['cvp.a', 'cvp.b', 'npv.a'].map((id) =>
+      attempt(id, '2026-10-01', { earned: 1, allCorrect: false }),
+    )
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon('2026-10-10'))
+    expect(plan.phase).toBe('mastery')
+    expect(plan.items.map((item) => item.reason)).toEqual(['retry', 'retry', 'new'])
+  })
+
+  it('新しい問題は、次の単元（前提が済んだいちばん手前の単元）から出す', () => {
+    const plan = buildDaily([], DEFAULT_SETTINGS, PROBLEM_TEMPLATES, noon('2026-10-10'))
+    // いちばん手前は財務諸表・仕訳基礎（仕訳ラボの問題）
+    expect(plan.items.map((item) => [item.topic, item.reason])).toEqual([
+      ['journal', 'new'],
+      ['journal', 'new'],
+      ['journal', 'new'],
+    ])
+  })
+})
+
+describe('維持期間のデイリー', () => {
+  const day = '2027-05-10'
+
+  it('新しい問題は出さず、解いたことのある問題を、古い順に出す', () => {
+    const history = [
+      attempt('cvp.a', '2027-04-01'),
+      attempt('npv.a', '2027-04-02'),
+      attempt('cf.a', '2027-04-03'),
+    ]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon(day))
+    expect(plan.phase).toBe('maintenance')
+    expect(plan.items.some((item) => item.reason === 'new')).toBe(false)
+    expect(plan.items.map((item) => item.templateId).sort()).toEqual(['cf.a', 'cvp.a', 'npv.a'])
+  })
+
+  it('まだ何も解いていなければ、新しい問題を出す', () => {
+    const plan = buildDaily([], DEFAULT_SETTINGS, templates, noon(day))
+    expect(plan.items.every((item) => item.reason === 'new')).toBe(true)
+  })
+
+  it('解いたことのある問題が足りなくても、新しい問題より先に、解いたことのある問題を出す', () => {
+    const history = [attempt('cvp.a', '2027-04-01')]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, templates, noon(day))
+    expect(plan.items[0]).toMatchObject({ templateId: 'cvp.a' })
+  })
+})
+
+describe('直前期のデイリー', () => {
+  const day = '2027-08-10'
+  const hard = { ...template('cvp.hard', 'cvp'), difficulty: 3 as const }
+  const pool = [...templates, hard, { ...template('npv.hard', 'npv'), difficulty: 3 as const }]
+
+  it('本番形式（難易度 3 など）を 7 割、弱点を 3 割で出す', () => {
+    const history = [
+      attempt('cvp.a', '2027-08-01', { earned: 1, allCorrect: false }),
+      attempt('cvp.hard', '2027-08-01'),
+    ]
+    const plan = buildDaily(history, DEFAULT_SETTINGS, pool, noon(day))
+    expect(plan.phase).toBe('final')
+    expect(plan.items.map((item) => [item.templateId, item.reason])).toEqual([
+      ['cvp.a', 'retry'],
+      ['npv.hard', 'exam'],
+      ['cvp.hard', 'exam'],
+    ])
+  })
+
+  it('本番形式の問題は、まだ解いていないものを先に、解いたものは得点率が低い順に出す', () => {
+    const history = [
+      attempt('cvp.hard', '2027-08-01', { earned: 5, allCorrect: true }),
+      attempt('npv.hard', '2027-08-01', { earned: 2, allCorrect: false }),
+    ]
+    const plan = buildDaily(history, { ...DEFAULT_SETTINGS, dailyGoal: 2 }, pool, noon(day))
+    const exams = plan.items.filter((item) => item.reason === 'exam' || item.reason === 'retry')
+    expect(exams[0]!.templateId).toBe('npv.hard')
+  })
+
+  it('本番形式の問題がなければ、弱点と、しばらく解いていない問題で埋める', () => {
+    const plan = buildDaily([], DEFAULT_SETTINGS, templates, noon(day))
+    expect(plan.items).toHaveLength(3)
+    expect(plan.items.some((item) => item.reason === 'exam')).toBe(false)
   })
 })

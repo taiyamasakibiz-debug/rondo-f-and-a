@@ -19,6 +19,8 @@ import {
   restoreBackup,
 } from '@/data/backup'
 import { useLedgerStore } from '@/ledger/store'
+import { PHASE_LABELS } from '@/progress/phase'
+import { usePhase } from '@/progress/hooks'
 import { useProgressStore } from '@/progress/store'
 import { liveAttempts } from '@/progress/types'
 import { FeedbackPanel } from './FeedbackPanel'
@@ -33,6 +35,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" subtitle="設定" />
       <div className="flex flex-col gap-16">
         <DailySection />
+        <ScheduleSection />
         <Section en="Sound" ja="効果音と BGM">
           <FeedbackPanel />
         </Section>
@@ -96,6 +99,86 @@ function SelectField({
         {help}
       </span>
     </div>
+  )
+}
+
+/** Tessera の TextField と同じ下線だけの日付・月の入力 */
+function DateField({
+  label,
+  help,
+  type,
+  value,
+  onChange,
+}: {
+  label: string
+  help: string
+  type: 'month' | 'date'
+  value: string
+  onChange: (value: string) => void
+}) {
+  const id = useId()
+  return (
+    <div className="flex flex-col gap-2.5">
+      <label htmlFor={id} className="text-[13px] font-bold tracking-[0.1em]">
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        // 入力の途中で消したときは、変えない
+        onChange={(event) => event.target.value && onChange(event.target.value)}
+        aria-describedby={`${id}-help`}
+        className="h-14 max-w-xs border-0 border-b border-ink bg-transparent px-1 text-[17px] tracking-text focus:border-b-2 focus:border-ember focus:outline-none"
+      />
+      <span id={`${id}-help`} className="text-caption text-ink-muted">
+        {help}
+      </span>
+    </div>
+  )
+}
+
+function ScheduleSection() {
+  const settings = useProgressStore((state) => state.settings)
+  const updateSettings = useProgressStore((state) => state.updateSettings)
+  const { phase, endsOn, daysLeft } = usePhase()
+  const label = PHASE_LABELS[phase]
+  return (
+    <Section en="Schedule" ja="学習スケジュール">
+      <div className="flex flex-col gap-1 rounded-md bg-fog p-5">
+        <span className="text-caption text-ink-muted">今の局面</span>
+        <span className="font-ja text-[17px] font-bold tracking-ja">
+          {label.name}
+          {daysLeft !== null && endsOn && (
+            <span className="ml-3 text-label font-normal text-ink-muted tabular-nums">
+              {endsOn} まで あと {daysLeft} 日
+            </span>
+          )}
+        </span>
+        <span className="text-caption text-ink-muted">{label.description}</span>
+      </div>
+      <DateField
+        label="財務・会計をマスターしたい月"
+        help="この月の末日までが「マスター期間」です。そのあとは「維持期間」になり、新しい問題は出さずに復習の間隔を長くします。"
+        type="month"
+        value={settings.masteryMonth}
+        onChange={(masteryMonth) => void updateSettings({ masteryMonth })}
+      />
+      <DateField
+        label="1 次試験の日"
+        help="この日の 30 日前から「直前期」になり、本番形式の問題と弱点の復習を中心に出します。日付は仮です。決まったら変えてください。"
+        type="date"
+        value={settings.firstExamDate}
+        onChange={(firstExamDate) => void updateSettings({ firstExamDate })}
+      />
+      <DateField
+        label="2 次試験の日"
+        help="この日までが直前期です。"
+        type="date"
+        value={settings.secondExamDate}
+        onChange={(secondExamDate) => void updateSettings({ secondExamDate })}
+      />
+    </Section>
   )
 }
 

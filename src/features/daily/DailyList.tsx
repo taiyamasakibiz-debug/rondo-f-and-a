@@ -12,6 +12,7 @@ const REASON_LABELS: Record<DailyReason, { en: string; ja: string }> = {
   retry: { en: 'RETRY', ja: '前回の間違い' },
   new: { en: 'NEW', ja: 'はじめての問題' },
   practice: { en: 'PRACTICE', ja: 'しばらくぶり' },
+  exam: { en: 'EXAM', ja: '本番形式' },
 }
 
 /** 今日のデイリーの問題の一覧。ホームとデイリーのページで使う */

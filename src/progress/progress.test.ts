@@ -158,14 +158,51 @@ describe('レベルと熟練度', () => {
 describe('復習スケジュール', () => {
   const base = { templateId: 't', total: 5 }
 
-  it('全問正解が続くと間隔が 1 → 3 → × 易しさ と伸びる', () => {
+  it('マスター期間は、全問正解が続くと間隔が 1 → 3 → 7 → 14 → 30 日と伸びて、30 日で止まる', () => {
     const good = { ...base, earned: 5, allCorrect: true }
-    const first = nextCard(undefined, good, '2026-10-01')
-    expect(first).toMatchObject({ intervalDays: 1, dueDay: '2026-10-02' })
-    const second = nextCard(first, good, '2026-10-02')
-    expect(second).toMatchObject({ intervalDays: 3, dueDay: '2026-10-05' })
-    const third = nextCard(second, good, '2026-10-05')
-    expect(third.intervalDays).toBe(Math.round(3 * 2.5))
+    let card = nextCard(undefined, good, '2026-10-01')
+    expect(card).toMatchObject({ intervalDays: 1, dueDay: '2026-10-02' })
+    const intervals = [card.intervalDays]
+    for (let i = 0; i < 6; i += 1) {
+      card = nextCard(card, good, card.dueDay)
+      intervals.push(card.intervalDays)
+    }
+    expect(intervals).toEqual([1, 3, 7, 14, 30, 30, 30])
+  })
+
+  it('維持期間は、間隔が 14 → 30 → 45 日と伸びる', () => {
+    const good = { ...base, earned: 5, allCorrect: true }
+    const first = nextCard(undefined, good, '2027-05-01', 'maintenance')
+    const second = nextCard(first, good, first.dueDay, 'maintenance')
+    const third = nextCard(second, good, second.dueDay, 'maintenance')
+    expect([first, second, third].map((card) => card.intervalDays)).toEqual([14, 30, 45])
+  })
+
+  it('間違えたときは、局面にかかわらず翌日にもう一度出す', () => {
+    const good = nextCard(
+      undefined,
+      { ...base, earned: 5, allCorrect: true },
+      '2027-05-01',
+      'maintenance',
+    )
+    const bad = nextCard(
+      good,
+      { ...base, earned: 0, allCorrect: false },
+      '2027-05-20',
+      'maintenance',
+    )
+    expect(bad).toMatchObject({ streak: 0, intervalDays: 1, dueDay: '2027-05-21' })
+  })
+
+  it('解答記録からは、解答した日の局面の間隔表を使う（局面が変わっても過去の間隔は変わらない）', () => {
+    // 3 月（マスター期間）に 1 回、5 月（維持期間）に 1 回、全問正解
+    const attempts = [
+      attempt(local('2027-03-30'), { templateId: 'a' }),
+      attempt(local('2027-05-01'), { templateId: 'a' }),
+    ]
+    const [card] = [...buildReviewCards(attempts, DEFAULT_SETTINGS).values()]
+    // 2 回目は維持期間の表の 2 番目（30 日）
+    expect(card).toMatchObject({ streak: 2, intervalDays: 30, dueDay: '2027-05-31' })
   })
 
   it('6 割未満なら翌日にもう一度出し、易しさを下げる', () => {
@@ -189,7 +226,7 @@ describe('復習スケジュール', () => {
       attempt(local('2026-10-03'), { templateId: 'b' }), // 期日 10/4
       attempt(local('2026-10-05'), { templateId: 'c' }), // 期日 10/6
     ]
-    const cards = buildReviewCards(attempts, 4)
+    const cards = buildReviewCards(attempts, DEFAULT_SETTINGS)
     expect(dueCards(cards, '2026-10-05').map((card) => card.templateId)).toEqual(['a', 'b'])
   })
 })

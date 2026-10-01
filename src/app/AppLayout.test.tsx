@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -217,6 +217,33 @@ describe('フリーモード', () => {
     expect(
       screen.queryByRole('navigation', { name: 'メインナビゲーション' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('学習スケジュールの設定', () => {
+  it('今の局面が出て、目標の月を変えると局面が変わる', async () => {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().load()
+    await useProgressStore.getState().resetAll()
+    await renderAt('/settings')
+    // 既定の目標月（2027-03）より前なら、マスター期間
+    expect(await screen.findByText('マスター期間')).toBeInTheDocument()
+    const month = screen.getByLabelText('財務・会計をマスターしたい月')
+    expect(month).toHaveValue('2027-03')
+
+    // 目標の月を過去にすると、維持期間になる
+    fireEvent.change(month, { target: { value: '2020-01' } })
+    expect(await screen.findByText('維持期間')).toBeInTheDocument()
+    expect(useProgressStore.getState().settings.masteryMonth).toBe('2020-01')
+    await useProgressStore.getState().resetAll()
+  })
+
+  it('ホームと記録に、今の局面が出る', async () => {
+    await renderAt('/')
+    expect(await screen.findByText('PHASE')).toBeInTheDocument()
+    cleanup()
+    await renderAt('/records')
+    expect(await screen.findByText(/今は.*期/)).toBeInTheDocument()
   })
 })
 

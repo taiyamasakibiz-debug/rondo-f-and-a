@@ -45,6 +45,14 @@ export const settingsSchema = z.object({
   dailyGoal: z.number().int().min(1).max(20),
   /** 日付の切り替わり時刻（0〜23 時） */
   dayStartHour: z.number().int().min(0).max(23),
+  /** 財務・会計をマスターしたい月（"2027-03"）。この月の末日までが「マスター期間」 */
+  masteryMonth: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .default('2027-03'),
+  /** 1 次試験・2 次試験の日（"2027-08-01"）。直前期の判定に使う */
+  firstExamDate: z.iso.date().default('2027-08-01'),
+  secondExamDate: z.iso.date().default('2027-10-01'),
   updatedAt: z.iso.datetime({ offset: true }),
 })
 export type Settings = z.infer<typeof settingsSchema>
@@ -52,6 +60,10 @@ export type Settings = z.infer<typeof settingsSchema>
 export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 3,
   dayStartHour: 4,
+  // 試験日は仮の日付。決まったら設定で変える
+  masteryMonth: '2027-03',
+  firstExamDate: '2027-08-01',
+  secondExamDate: '2027-10-01',
   updatedAt: new Date(0).toISOString(),
 }
 
@@ -61,6 +73,12 @@ export function liveAttempts(attempts: readonly Attempt[]): Attempt[] {
 }
 
 /** 更新日時を除いた設定（テストや比較用） */
-export function settingsValues({ dailyGoal, dayStartHour }: Settings) {
-  return { dailyGoal, dayStartHour }
+export function settingsValues({
+  dailyGoal,
+  dayStartHour,
+  masteryMonth,
+  firstExamDate,
+  secondExamDate,
+}: Settings) {
+  return { dailyGoal, dayStartHour, masteryMonth, firstExamDate, secondExamDate }
 }

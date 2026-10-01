@@ -6,7 +6,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { LABS, type Lab, findLab } from '@/features/labs/labs'
 import { findTemplate } from '@/problems'
 import { StageCertification } from '@/features/exam/StageCertification'
-import { useCourse, useStreak, useTopicProgress } from '@/progress/hooks'
+import { useCourse, usePhase, useStreak, useTopicProgress } from '@/progress/hooks'
+import { PHASE_LABELS } from '@/progress/phase'
 import type { StageProgress, UnitProgress, UnitState } from '@/progress/units'
 import { MAX_FREEZES } from '@/progress/streak'
 import { useProgressStore } from '@/progress/store'
@@ -112,6 +113,7 @@ function StateTag({ state }: { state: UnitState }) {
 
 function CourseSection() {
   const course = useCourse()
+  const phase = usePhase()
   const current = course.stages.find((entry) => entry.stage.id === course.currentStage)
 
   return (
@@ -142,6 +144,10 @@ function CourseSection() {
                 : 'いま取り組める単元は、すべて定着しました。'}
             </p>
           )}
+          <p className="text-caption text-ink-muted">
+            今は{PHASE_LABELS[phase.phase].name}（{PHASE_LABELS[phase.phase].description}）
+            {phase.daysLeft !== null && `。あと ${phase.daysLeft} 日`}
+          </p>
           <p className="text-caption text-ink-muted">
             レベルは、一度定着した単元の点で決まります。要復習になっても下がりません。
           </p>

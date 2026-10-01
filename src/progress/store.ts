@@ -17,7 +17,7 @@ type ProgressState = {
   settings: Settings
   load(): Promise<void>
   recordAttempt(attempt: NewAttempt, now?: Date): Promise<Attempt>
-  updateSettings(patch: Partial<Pick<Settings, 'dailyGoal' | 'dayStartHour'>>): Promise<void>
+  updateSettings(patch: Partial<Omit<Settings, 'updatedAt'>>): Promise<void>
   /**
    * すべて置き換える（バックアップの読み込み用。形式の確認は src/data/backup.ts で行う）。
    * 置き換えで無くなる記録は消さずに削除の印（deletedAt）を付ける（ほかの端末に削除を伝えるため）
