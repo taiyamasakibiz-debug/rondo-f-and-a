@@ -51,6 +51,8 @@ export function AmbientLines({ seed = 7, className }: { seed?: number; className
         <motion.path
           key={line.id}
           d={line.from}
+          // d をアニメーションさせるとき、最初の描画で値が未設定になり、d="undefined" のエラーが出るため明示する
+          initial={{ d: line.from }}
           stroke="var(--line-digital)"
           strokeOpacity={line.opacity}
           strokeWidth={line.width}
