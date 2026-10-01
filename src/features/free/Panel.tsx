@@ -19,7 +19,8 @@ export function Panel({
     <section
       aria-labelledby={`panel-${id}`}
       className={cn(
-        'flex min-w-0 flex-col gap-6 rounded-xl border border-line bg-paper p-6 md:p-8',
+        // パネルの中の並びは、画面ではなくパネル自身の幅で切り替える（@container）
+        '@container flex min-w-0 flex-col gap-6 rounded-xl border border-line bg-paper p-6 md:p-8',
         className,
       )}
     >

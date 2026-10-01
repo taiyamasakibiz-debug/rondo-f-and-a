@@ -72,7 +72,7 @@ export function BalanceSheetPanel() {
               <>（利益剰余金に、決算振替前の当期純利益 {formatSigned(profits.netIncome)} を含む）</>
             )}
           </p>
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 @lg:grid-cols-2">
             <AmountList caption="資産" rows={rows} total={t.totalAssets} />
             <AmountList
               caption="負債・純資産"

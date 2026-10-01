@@ -79,7 +79,10 @@ export function AccountsPanel() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid gap-5 md:grid-cols-[1fr_1fr_auto] md:items-end">
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-5 @md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] @md:items-end"
+      >
         <div className="flex flex-col gap-2.5">
           <label htmlFor={nameId} className="text-[13px] font-bold tracking-[0.1em]">
             科目名
@@ -90,7 +93,7 @@ export function AccountsPanel() {
             maxLength={30}
             autoComplete="off"
             onChange={(event) => handleName(event.target.value)}
-            className="h-12 border-0 border-b border-ink bg-transparent px-1 text-[16px] tracking-text focus:border-b-2 focus:border-ember focus:outline-none"
+            className="h-12 w-full min-w-0 border-0 border-b border-ink bg-transparent px-1 text-[16px] tracking-text focus:border-b-2 focus:border-ember focus:outline-none"
           />
         </div>
         <div className="flex flex-col gap-2.5">
@@ -104,7 +107,7 @@ export function AccountsPanel() {
               setCategory(event.target.value as Category | '')
               setTouchedCategory(true)
             }}
-            className="h-12 border-0 border-b border-ink bg-transparent px-1 text-[15px] tracking-text focus:border-b-2 focus:border-ember focus:outline-none"
+            className="h-12 w-full min-w-0 border-0 border-b border-ink bg-transparent px-1 text-[15px] tracking-text focus:border-b-2 focus:border-ember focus:outline-none"
           >
             <option value="">区分を選ぶ</option>
             {MAJORS.map((major) => (
@@ -118,7 +121,9 @@ export function AccountsPanel() {
             ))}
           </select>
         </div>
-        <Button type="submit">追加する</Button>
+        <Button type="submit" className="justify-self-start">
+          追加する
+        </Button>
       </form>
       {message && (
         <p role={message.error ? 'alert' : 'status'} className="text-body-sm text-ink-body">
@@ -127,7 +132,7 @@ export function AccountsPanel() {
       )}
 
       {accounts.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 @md:grid-cols-2">
           {MAJORS.filter((major) => groups.has(major)).map((major) => (
             <div key={major} className="flex flex-col">
               <span className="border-b border-line pb-2 text-[13px] font-bold tracking-[0.1em]">

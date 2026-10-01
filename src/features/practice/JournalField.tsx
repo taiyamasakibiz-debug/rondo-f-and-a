@@ -67,19 +67,22 @@ export function JournalField({
       <legend id={`${id}-label`} className="mb-3 font-ja text-base font-bold tracking-[0.08em]">
         {prompt}
       </legend>
-      <div className="grid gap-8 md:grid-cols-2">
-        {(['debits', 'credits'] as const).map((side) => (
-          <SideRows
-            key={side}
-            side={side}
-            rows={rows[side]}
-            accounts={accounts}
-            disabled={graded}
-            onChangeRow={(key, patch) => updateRow(side, key, patch)}
-            onAdd={() => addRow(side)}
-            onRemove={(key) => removeRow(side, key)}
-          />
-        ))}
+      {/* 借方と貸方を横に並べるかは、置かれた場所の幅で決める（フリーモードの狭いパネルでは縦に並べる） */}
+      <div className="@container">
+        <div className="grid gap-8 @2xl:grid-cols-2">
+          {(['debits', 'credits'] as const).map((side) => (
+            <SideRows
+              key={side}
+              side={side}
+              rows={rows[side]}
+              accounts={accounts}
+              disabled={graded}
+              onChangeRow={(key, patch) => updateRow(side, key, patch)}
+              onAdd={() => addRow(side)}
+              onRemove={(key) => removeRow(side, key)}
+            />
+          ))}
+        </div>
       </div>
       <p
         className={cn(

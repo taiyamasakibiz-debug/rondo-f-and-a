@@ -41,17 +41,17 @@ export function FreePage() {
         description="仕訳を自由に記帳すると、B/S・P/L・キャッシュフローがその場で組み上がります。各パネルは「別ウィンドウ」で開いて並べられ、どのウィンドウで記帳しても、ほかのウィンドウがリアルタイムに変わります。"
       />
       <LedgerStatus>
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* 仕訳パネルは中身の高さのまま（右の列に合わせて間延びさせない） */}
-          <div className="min-w-0 lg:self-start">
+        {/* 左に入力（仕訳・科目）、右に結果（B/S・P/L・CF）。列ごとに上から詰めて、すき間を作らない */}
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-6">
             <JournalPanel />
+            <AccountsPanel />
           </div>
           <div className="flex min-w-0 flex-col gap-6">
             <BalanceSheetPanel />
             <IncomeStatementPanel />
             <CashFlowPanel />
           </div>
-          <AccountsPanel />
         </div>
       </LedgerStatus>
     </>
