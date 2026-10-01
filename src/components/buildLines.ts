@@ -62,7 +62,7 @@ export function buildLines(width: number, height: number, seed: number): Line[] 
         to: path(swing, -swing * 0.8, (random() - 0.5) * 24),
         opacity: 0.45 + random() * 0.5,
         width: 0.7 + random() * 0.5,
-        duration: 9 + random() * 8,
+        duration: 6 + random() * 5,
         delay: -random() * 8,
       })
     }
