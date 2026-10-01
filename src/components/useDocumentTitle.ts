@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export const APP_NAME = 'Luminous Insight'
+export const APP_NAME = 'Rondo'
 
 /**
  * ブラウザのタブのタイトル。複数のウィンドウを並べて使うので（docs/DESIGN.md §2）、

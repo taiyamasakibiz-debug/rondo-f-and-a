@@ -28,13 +28,13 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Luminous Insight',
-        short_name: 'Luminous',
+        name: 'Rondo',
+        short_name: 'Rondo',
         description: '中小企業診断士 事例Ⅳ・財務会計の学習アプリ',
         lang: 'ja',
         start_url: '/',
         display: 'standalone',
-        background_color: '#ffffff',
+        background_color: '#121213',
         theme_color: '#ffffff',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

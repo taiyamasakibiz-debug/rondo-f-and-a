@@ -47,8 +47,8 @@ export function AppLayout() {
       {/* Tessera のナビ：半透明の白いピル */}
       <header className="sticky top-0 z-40 px-4 pt-4 md:px-6 md:pt-6">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-pill border border-line bg-white/60 px-6 backdrop-blur-md md:h-16 md:pr-2 md:pl-8">
-          <NavLink to="/" className="text-[15px] font-extrabold tracking-[0.3em] uppercase">
-            Luminous
+          <NavLink to="/" aria-label="Rondo ホーム">
+            <img src="/brand/logo-horizontal.svg" alt="Rondo" className="h-10 w-auto" />
           </NavLink>
           <nav aria-label="メインナビゲーション" className="hidden items-center gap-1 md:flex">
             {NAV_ITEMS.map((item) => (

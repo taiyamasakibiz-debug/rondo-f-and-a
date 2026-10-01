@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 115"><title>Rondo</title>
+<g stroke="#121213" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none">
+  <path d="M15 21V95M15 21H36A19 19 0 0 1 36 59H15M36 59L58 95"/>
+  <circle cx="105" cy="70" r="25"/>
+  <path d="M155 95V65M155 65A20 20 0 0 1 195 65V95"/>
+  <circle cx="245" cy="70" r="25"/>
+  <path d="M270 21V95"/>
+  <circle cx="315" cy="70" r="25"/>
+</g>
+<circle cx="332.7" cy="52.3" r="13" fill="#fff"/>
+<circle cx="332.7" cy="52.3" r="9" fill="#eb805e"/>
+</svg>
