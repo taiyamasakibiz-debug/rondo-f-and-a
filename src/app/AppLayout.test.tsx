@@ -273,6 +273,8 @@ describe('正解とレベルアップの演出', () => {
 
   it('全問正解すると波紋が出て、経験値のバーが伸び、レベルが上がる', async () => {
     const store = await withJournalXp75()
+    const vibrate = vi.fn()
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
     await solveCreditSale()
 
     const feedback = (await screen.findAllByRole('status'))[0]!
@@ -286,6 +288,11 @@ describe('正解とレベルアップの演出', () => {
     // バーが満タンになったところで、レベルアップのカードに切り替わる
     expect(await screen.findByText('LEVEL UP', {}, { timeout: 3000 })).toBeInTheDocument()
     expect(screen.getByText('Lv.3')).toBeInTheDocument()
+    // 採点の瞬間と、レベルアップの瞬間に振動する
+    const { PATTERNS } = await import('@/feedback/haptics')
+    expect(vibrate).toHaveBeenNthCalledWith(1, PATTERNS.correct)
+    await vi.waitFor(() => expect(vibrate).toHaveBeenCalledWith(PATTERNS.levelUp))
+    Reflect.deleteProperty(navigator, 'vibrate')
     await store.getState().resetAll()
   })
 

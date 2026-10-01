@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { generateProblem } from '@/engine/generate'
 import { type StepInput, gradeProblem } from '@/engine/grade'
 import { randomSeed } from '@/engine/random'
+import { feedbackLater } from '@/feedback'
 import { findLab } from '@/features/labs/labs'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { AnswerFeedback } from '@/features/practice/AnswerFeedback'
@@ -263,6 +264,9 @@ function ExamResultView({ topic, tier, session }: { topic: Topic; tier: Tier; se
   const attempts = useProgressStore((state) => state.attempts)
   const rule = TIER_RULES[tier]
   const result = examResults(attempts).find((r) => r.examId === session.id)
+  // 合格の音は認定証（CertifiedCard）で、バッジが押される瞬間に鳴らす
+  const failed = result !== undefined && !result.passed
+  useEffect(() => (failed ? feedbackLater('failed', 0.1) : undefined), [failed])
   const byIndex = new Map(
     attempts.filter((a) => a.exam?.id === session.id).map((a) => [a.exam!.index, a]),
   )

@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { NavLink, Outlet, ScrollRestoration, useLocation, useSearchParams } from 'react-router'
 import { useTextInputFocused } from '@/components/useTextInputFocused'
+import { feedback } from '@/feedback'
 import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
 
@@ -83,6 +84,7 @@ export function AppLayout() {
               <NavLink
                 to={item.to}
                 end={item.end}
+                onClick={() => feedback('tap')}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center justify-center rounded-pill py-3 font-ja text-[13px] font-bold tracking-[0.1em] text-ink-muted transition-colors',

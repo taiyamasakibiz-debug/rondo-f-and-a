@@ -1,7 +1,9 @@
 import { motion, useReducedMotion } from 'motion/react'
+import { useEffect } from 'react'
 import { Burst } from '@/components/celebrate/Burst'
 import { Sheen } from '@/components/celebrate/Sheen'
 import { DigitalLines } from '@/components/DigitalLines'
+import { feedbackLater } from '@/feedback'
 import { DURATION, EASE_OUT, SPRING_SOFT } from '@/lib/motion'
 import type { Tier } from '@/progress/certification'
 import { CertBadge } from './CertBadge'
@@ -23,6 +25,8 @@ const STAMP_AT = 0.3 + DRAW * 0.7
  */
 export function CertifiedCard({ tier, labName }: { tier: Tier; labName: string }) {
   const reduceMotion = useReducedMotion()
+  // バッジが押される瞬間に鳴らす
+  useEffect(() => feedbackLater('certified', STAMP_AT), [])
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 12 }}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { AnimatedNumber } from '@/components/AnimatedNumber'
 import { Burst } from '@/components/celebrate/Burst'
 import { DigitalLines } from '@/components/DigitalLines'
+import { feedbackLater } from '@/feedback'
 import { DURATION, EASE_OUT, SPRING_POP, SPRING_SOFT, STAGE } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import type { LevelState } from '@/progress/level'
@@ -113,6 +114,7 @@ function XpBar({
 /** レベルアップのカード。黒いピルが弾んで出て、波紋が広がる */
 function LevelUp({ from, to }: { from: number; to: number }) {
   const reduceMotion = useReducedMotion()
+  useEffect(() => feedbackLater('levelUp', 0), [])
   return (
     <motion.div
       role="status"
@@ -147,6 +149,8 @@ const WEEK = 7
 export function StreakUp({ from, to }: { from: number; to: number }) {
   const reduceMotion = useReducedMotion()
   const lit = Math.min(to, WEEK)
+  // 今日の点が灯るのに合わせて鳴らす
+  useEffect(() => feedbackLater('streak', STAGE.streak + 0.35), [])
   return (
     <motion.div
       role="status"

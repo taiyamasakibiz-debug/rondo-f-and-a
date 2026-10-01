@@ -1,7 +1,9 @@
 import { ArrowRight } from 'lucide-react'
+import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { feedbackLater } from '@/feedback'
 import { AnswerFeedback } from '@/features/practice/AnswerFeedback'
 import { dailyPracticePath, nextDailyItem } from '@/progress/daily'
 import { useStreak } from '@/progress/hooks'
@@ -18,6 +20,7 @@ export function DailyPage() {
   const location = useLocation()
   const justCompleted =
     (location.state as { justCompleted?: boolean } | null)?.justCompleted === true
+  useEffect(() => (justCompleted ? feedbackLater('correct', 0.1) : undefined), [justCompleted])
 
   return (
     <>

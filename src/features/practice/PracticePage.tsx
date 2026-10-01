@@ -8,6 +8,7 @@ import { type Problem, generateProblem } from '@/engine/generate'
 import { type ProblemResult, type StepInput, gradeProblem } from '@/engine/grade'
 import { createRandom, randomSeed } from '@/engine/random'
 import { useDaily } from '@/features/daily/useDaily'
+import { feedback } from '@/feedback'
 import { findLab } from '@/features/labs/labs'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { findTemplate, templatesForTopic } from '@/problems'
@@ -94,6 +95,8 @@ function Practice({
     event.preventDefault()
     const graded = gradeProblem(problem, inputs)
     setResult(graded)
+    // 採点の瞬間の手応え（音と振動）。ボタンを押した操作の中で鳴らす
+    feedback(graded.allCorrect ? 'correct' : graded.earned > 0 ? 'partial' : 'incorrect')
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
 
     const store = useProgressStore.getState()

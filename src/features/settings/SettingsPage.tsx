@@ -20,6 +20,7 @@ import {
 } from '@/data/backup'
 import { useLedgerStore } from '@/ledger/store'
 import { useProgressStore } from '@/progress/store'
+import { FeedbackPanel } from './FeedbackPanel'
 import { SyncPanel } from './SyncPanel'
 
 const GOAL_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -31,6 +32,9 @@ export function SettingsPage() {
       <PageHeader title="Settings" subtitle="設定" />
       <div className="flex flex-col gap-16">
         <DailySection />
+        <Section en="Sound" ja="音と振動">
+          <FeedbackPanel />
+        </Section>
         <Section en="Sync" ja="端末間の同期">
           <SyncPanel />
         </Section>
