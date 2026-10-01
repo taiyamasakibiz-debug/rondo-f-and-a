@@ -8,6 +8,7 @@ function Probe() {
     <>
       <input aria-label="金額" inputMode="decimal" />
       <input aria-label="チェック" type="checkbox" />
+      <input aria-label="メモ" />
       <select aria-label="ノルマ">
         <option>1</option>
       </select>
@@ -30,9 +31,14 @@ describe('useTextInputFocused', () => {
     expect(screen.getByText('入力中')).toBeInTheDocument()
 
     // 入力欄から入力欄へ移っても、途中で false にならない
-    act(() => screen.getByLabelText('ノルマ').focus())
+    act(() => screen.getByLabelText('メモ').focus())
     await settle()
     expect(screen.getByText('入力中')).toBeInTheDocument()
+
+    // 選択欄はキーボードが出ないので、数えない
+    act(() => screen.getByLabelText('ノルマ').focus())
+    await settle()
+    expect(screen.getByText('入力していない')).toBeInTheDocument()
 
     act(() => screen.getByLabelText('チェック').focus())
     await settle()
@@ -45,6 +51,18 @@ describe('useTextInputFocused', () => {
     radio.type = 'radio'
     expect(isTextEntry(radio)).toBe(false)
     expect(isTextEntry(document.createElement('textarea'))).toBe(true)
+  })
+
+  it('日付・月・選択欄（キーボードではなくピッカーが出るもの）は入力欄に数えない', () => {
+    for (const type of ['date', 'month', 'time']) {
+      const input = document.createElement('input')
+      input.type = type
+      expect(isTextEntry(input), type).toBe(false)
+    }
+    expect(isTextEntry(document.createElement('select'))).toBe(false)
+    const number = document.createElement('input')
+    number.inputMode = 'decimal'
+    expect(isTextEntry(number)).toBe(true)
     expect(isTextEntry(null)).toBe(false)
   })
 })
@@ -76,7 +94,7 @@ describe('useTextInputFocused（キーボードだけ閉じたとき）', () => 
       expect(screen.getByText('入力していない')).toBeInTheDocument()
 
       // もう一度入力欄を触ると、また隠す
-      act(() => screen.getByLabelText('ノルマ').focus())
+      act(() => screen.getByLabelText('メモ').focus())
       await settle()
       expect(screen.getByText('入力中')).toBeInTheDocument()
     } finally {

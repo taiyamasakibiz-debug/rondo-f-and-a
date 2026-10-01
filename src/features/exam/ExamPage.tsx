@@ -61,7 +61,7 @@ function Exam({ tier }: { tier: Tier }) {
   const header = (
     <PageHeader
       title={`${rule.labelEn[0]}${rule.labelEn.slice(1).toLowerCase()} Exam`}
-      subtitle={`${rule.label}認定テスト（Stage ${rule.stage} の修了テスト）`}
+      subtitle={`${rule.label}認定テスト（Stage ${rule.stage}）`}
     />
   )
 
@@ -115,18 +115,12 @@ function Exam({ tier }: { tier: Tier }) {
             出題の範囲：{unitNames.join('・')}
             {unitNames.length > 1 && '（単元をまたいで出ます）'}
           </li>
-          {hasWritten && (
-            <li>
-              記述の小問は、本番と同じく時間内に書きますが、自動の採点は目安なので、合否の計算には含めません。
-            </li>
-          )}
+          {hasWritten && <li>記述は時間内に書きますが、合否には含めません。</li>}
+          <li>解いている間は正解を表示せず、最後にまとめて採点します。</li>
           <li>
-            本番と同じく、解いている間は正解を表示しません。最後にまとめて採点結果を出します。
+            時間切れ・途中でページを離れたときは、そこで終了します（入力中の答えで採点し、残りは 0
+            点）。
           </li>
-          <li>
-            時間切れになると、入力中の問題はその時点の答えで採点し、残りの問題は 0 点になります。
-          </li>
-          <li>途中でページを離れると、そこで終了します（残りは 0 点）。</li>
         </ul>
         {status === 'loading' ? null : eligibility.eligible && plan.items.length > 0 ? (
           <Button size="lg" className="self-start pr-2" onClick={start}>
@@ -359,9 +353,7 @@ function ExamResultView({ tier, session }: { tier: Tier; session: Session }) {
           )
         })}
       </ol>
-      <p className="text-caption text-ink-muted">
-        各問題を開くと、同じ問題を解き直して解説を確認できます。
-      </p>
+      <p className="text-caption text-ink-muted">問題を開くと、解き直して解説を確認できます。</p>
       <Button asChild variant="outline" className="self-start">
         <Link to="/records">記録に戻る</Link>
       </Button>

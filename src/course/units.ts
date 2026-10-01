@@ -17,21 +17,21 @@ export type Stage = {
 export const STAGES: readonly Stage[] = [
   {
     id: 1,
-    name: '基礎手続の自動化',
+    name: '基礎の計算の習熟',
     tier: 'bronze',
-    description: '単一の取引や数値から、仕訳・指標・CF・CVP・時間価値を迷わず計算できる',
+    description: '仕訳・指標・CF・CVP・時間価値を、迷わず計算できる',
   },
   {
     id: 2,
-    name: '標準・意思決定',
+    name: '解法の展開',
     tier: 'silver',
-    description: 'NPV、セグメント別損益、企業価値など、標準的な解法手順を展開できる',
+    description: 'NPV・セグメント別損益・企業価値の解き方を組み立てられる',
   },
   {
     id: 3,
     name: '事例Ⅳ総合',
     tier: 'gold',
-    description: '複数の論点がからむ大問を、制限時間内に解き、助言まで書ける',
+    description: '論点がからむ大問を、時間内に解いて助言まで書ける',
   },
 ]
 
@@ -198,6 +198,15 @@ export function findUnit(id: string): Unit | undefined {
 
 export function findStage(id: StageId): Stage {
   return STAGES.find((stage) => stage.id === id)!
+}
+
+/** 単元の問題を解く画面（単元の最初の型のラボで開き、その単元の型だけを出す） */
+export function unitPracticePath(
+  unit: Unit,
+  topicOf: (templateId: string) => string | undefined,
+): string | null {
+  const topic = unit.templateIds.map(topicOf).find((value) => value !== undefined)
+  return topic ? `/labs/${topic}/practice?unit=${unit.id}` : null
 }
 
 export function unitOfTemplate(templateId: string): Unit | undefined {

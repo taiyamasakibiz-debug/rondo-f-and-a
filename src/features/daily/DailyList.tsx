@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link } from 'react-router'
+import { ARROW_HOVER } from '@/components/ArrowDot'
 import { findLab } from '@/features/labs/labs'
 import { Mark } from '@/features/practice/Mark'
 import { cn } from '@/lib/utils'
@@ -83,7 +84,10 @@ export function DailyList({ items }: { items: readonly DailyItem[] }) {
                 </span>
               ) : (
                 <span
-                  className="flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink transition-colors group-hover:bg-ink group-hover:text-on-ink"
+                  className={cn(
+                    'flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink',
+                    ARROW_HOVER,
+                  )}
                   aria-hidden
                 >
                   <ArrowRight className="size-4" />

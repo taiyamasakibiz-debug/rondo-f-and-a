@@ -230,7 +230,7 @@ describe('記述の自己採点', () => {
     // 選択は答えず、記述だけ書いて採点する（選択 2 点・記述 2 点）
     await userEvent.type(await screen.findByRole('textbox'), '収益性が低い')
     await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
-    expect(await screen.findByText(/点（キーワードによる目安）/)).toBeInTheDocument()
+    expect(await screen.findByText(/点（目安）/)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /〇 書けた/ }))
     expect(await screen.findByText(/自己採点 〇/)).toBeInTheDocument()
@@ -278,7 +278,13 @@ describe('学習スケジュールの設定', () => {
     expect(await screen.findByText('PHASE')).toBeInTheDocument()
     cleanup()
     await renderAt('/records')
-    expect(await screen.findByText(/今は.*期/)).toBeInTheDocument()
+    expect(await screen.findByText('PHASE')).toBeInTheDocument()
+    expect(screen.getByText('マスター期間')).toBeInTheDocument()
+    // 単元の行から、その単元の問題を解く画面に移れる
+    expect(screen.getByRole('link', { name: /財務諸表・仕訳基礎の問題を解く/ })).toHaveAttribute(
+      'href',
+      '/labs/journal/practice?unit=acc-bs-pl',
+    )
   })
 })
 

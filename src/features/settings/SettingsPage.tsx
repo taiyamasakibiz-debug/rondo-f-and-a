@@ -160,14 +160,14 @@ function ScheduleSection() {
       </div>
       <DateField
         label="財務・会計をマスターしたい月"
-        help="この月の末日までが「マスター期間」です。そのあとは「維持期間」になり、新しい問題は出さずに復習の間隔を長くします。"
+        help="この月の末日までが「マスター期間」。そのあとは、復習が中心の「維持期間」になります。"
         type="month"
         value={settings.masteryMonth}
         onChange={(masteryMonth) => void updateSettings({ masteryMonth })}
       />
       <DateField
         label="1 次試験の日"
-        help="この日の 30 日前から「直前期」になり、本番形式の問題と弱点の復習を中心に出します。日付は仮です。決まったら変えてください。"
+        help="この日の 30 日前から「直前期」（本番形式と弱点の復習が中心）になります。"
         type="date"
         value={settings.firstExamDate}
         onChange={(firstExamDate) => void updateSettings({ firstExamDate })}
@@ -280,7 +280,7 @@ function DataSection() {
     <Section en="Data" ja="データ">
       <p className="text-body-sm text-ink-body">
         解答記録（{attemptCount}{' '}
-        件）・設定・フリーモードの科目と仕訳は、この端末のブラウザの中に保存されています（同期している端末では、解答記録と設定はサーバーにも保存されます）。バックアップを取るときは書き出してください。
+        件）・設定・フリーモードは、この端末のブラウザに保存されています。バックアップは書き出しで取れます。
       </p>
       <div className="flex flex-wrap gap-3">
         <Button type="button" onClick={handleExport} disabled={!ready}>

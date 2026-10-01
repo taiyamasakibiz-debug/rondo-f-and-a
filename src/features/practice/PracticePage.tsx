@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { ArrowDot } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { type Unit, findUnit } from '@/course/units'
 import { type Problem, generateProblem } from '@/engine/generate'
 import {
   type ProblemResult,
@@ -40,10 +41,13 @@ export function PracticePage() {
   const retry = retryProblem(lab.id, searchParams)
   // ラボや問題が変わったら状態を作り直す
   const fromDaily = retry !== null && searchParams.get('from') === 'daily'
+  // 学習コースの単元から開いたときは、その単元の問題だけを出す
+  const unit = findUnit(searchParams.get('unit') ?? '')
   return (
     <Practice
       key={`${lab.id}:${searchParams}`}
       topic={lab.id}
+      unit={unit && unit.templateIds.length > 0 ? unit : undefined}
       initial={retry}
       fromDaily={fromDaily}
     />
@@ -58,8 +62,11 @@ function retryProblem(topic: Topic, searchParams: URLSearchParams): Problem | nu
   return generateProblem(template, seed)
 }
 
-function newProblem(topic: Topic): Problem | null {
-  const templates = templatesForTopic(topic)
+/** ラボ（または単元）の問題から 1 つ選んで作る */
+function newProblem(topic: Topic, unit?: Unit): Problem | null {
+  const templates = unit
+    ? unit.templateIds.map((id) => findTemplate(id)).filter((t) => t !== undefined)
+    : templatesForTopic(topic)
   if (templates.length === 0) return null
   const seed = randomSeed()
   return generateProblem(createRandom(seed).pick(templates), seed)
@@ -67,17 +74,19 @@ function newProblem(topic: Topic): Problem | null {
 
 function Practice({
   topic,
+  unit,
   initial,
   fromDaily,
 }: {
   topic: Topic
+  unit?: Unit
   initial: Problem | null
   fromDaily: boolean
 }) {
   const lab = findLab(topic)!
   const reduceMotion = useReducedMotion()
   const recordAttempt = useProgressStore((state) => state.recordAttempt)
-  const [problem, setProblem] = useState(() => initial ?? newProblem(topic))
+  const [problem, setProblem] = useState(() => initial ?? newProblem(topic, unit))
   const [inputs, setInputs] = useState<Record<string, StepInput>>({})
   // キーワードによる目安の採点（自己採点を当てる前）
   const [result, setResult] = useState<ProblemResult | null>(null)
@@ -148,7 +157,7 @@ function Practice({
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
 
     const store = useProgressStore.getState()
-    const before = topicProgress(store.attempts, topic)
+    const before = topicProgress(store.attempts, template.topic)
     const streakBefore = computeStreak(store.attempts, store.settings, submittedAt)
     const courseBefore = computeCourse(store.attempts, store.settings, submittedAt)
     const xp = nextAttemptXp(store.attempts, {
@@ -161,7 +170,8 @@ function Practice({
     setReward({ xp, totalBefore: before.xp, totalAfter: before.xp + xp })
     const saving = recordAttempt({
       templateId: template.id,
-      topic,
+      // 単元から開いたときは、ほかのラボの問題も出るので、問題そのもののラボで記録する
+      topic: template.topic,
       seed: problem.seed,
       earned: graded.earned,
       total: graded.total,
@@ -226,7 +236,7 @@ function Practice({
       window.scrollTo({ top: 0, behavior: 'auto' })
       return
     }
-    setProblem(newProblem(topic))
+    setProblem(newProblem(topic, unit))
     setInputs({})
     setResult(null)
     setSelfGrades({})
@@ -243,6 +253,12 @@ function Practice({
       {inDaily && (
         <p className="mb-3 text-[13px] font-bold tracking-caps text-ink-muted">
           DAILY {dailyIndex + 1} / {daily.items.length}
+        </p>
+      )}
+      {unit && !inDaily && (
+        <p className="mb-3 flex items-baseline gap-3 text-ink-muted">
+          <span className="text-[13px] font-bold tracking-caps">UNIT</span>
+          <span className="font-ja text-[13px] font-bold tracking-ja">{unit.name}</span>
         </p>
       )}
       <PageHeader title={lab.nameEn} subtitle={template.title} />

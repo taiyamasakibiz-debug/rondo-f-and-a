@@ -27,7 +27,7 @@ export function DailyPage() {
       <PageHeader
         title="Daily"
         subtitle="今日のデイリー"
-        description="復習の期日が来た問題と、まだ解いていない問題から選んだ今日のおすすめです。1 日の間は同じ問題が並びます。ストリークは、この一覧以外の問題を解いても数えます。"
+        description="復習の期日が来た問題と、新しい問題から選んだ今日のおすすめです。"
       />
       {status === 'loading' ? null : (
         <div className="flex flex-col gap-10">

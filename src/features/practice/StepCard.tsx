@@ -176,7 +176,7 @@ function NumericField({
         </button>
       </div>
       <span id={`${id}-help`} className="text-caption text-ink-muted">
-        マイナスは「△」「-」を入力するか、± ボタンで切り替えられます
+        マイナスは「△」「-」か ± ボタンで入力
       </span>
     </div>
   )
@@ -368,7 +368,7 @@ function WrittenResultRow({
             ? `${Math.round(result.earned * 10) / 10} / ${result.points} 点（自己採点 ${SELF_GRADE_MARK[selfGrade]}）`
             : result.invalidInput
               ? '未回答'
-              : `${Math.round(result.earned * 10) / 10} / ${result.points} 点（キーワードによる目安）`}
+              : `${Math.round(result.earned * 10) / 10} / ${result.points} 点（目安）`}
         </span>
         {result.hint && <span className="text-body-sm text-ink-body">{result.hint}</span>}
         <ul className="flex flex-wrap gap-2" aria-label="採点の観点">
@@ -394,9 +394,7 @@ function WrittenResultRow({
         {onSelfGrade ? (
           <SelfGradeButtons points={result.points} selected={selfGrade} onSelect={onSelfGrade} />
         ) : (
-          <span className="text-caption text-ink-muted">
-            表現の違いは自動では判定しきれないので、模範解答と見比べて確かめてください。
-          </span>
+          <span className="text-caption text-ink-muted">模範解答と見比べて確かめてください。</span>
         )}
       </div>
     </motion.div>
@@ -453,9 +451,6 @@ function SelfGradeButtons({
           )
         })}
       </div>
-      <span className="text-caption text-ink-muted">
-        キーワードによる目安の点は、表現の違いを判定しきれません。選ぶと、この小問の点を置き換えます（選び直せます）。
-      </span>
     </div>
   )
 }

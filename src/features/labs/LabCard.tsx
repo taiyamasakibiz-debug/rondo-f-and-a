@@ -1,6 +1,8 @@
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link } from 'react-router'
+import { ARROW_HOVER } from '@/components/ArrowDot'
+import { cn } from '@/lib/utils'
 import { useTopicProgress } from '@/progress/hooks'
 import type { Lab } from './labs'
 
@@ -65,7 +67,12 @@ export function LabCard({ lab, index }: LabCardProps) {
             />
           </div>
         </div>
-        <span className="flex size-12 items-center justify-center self-end rounded-pill bg-ink text-on-ink transition-transform duration-300 group-hover:translate-x-1">
+        <span
+          className={cn(
+            'flex size-12 items-center justify-center self-end rounded-pill border border-ink bg-ink text-on-ink',
+            ARROW_HOVER,
+          )}
+        >
           <ArrowRight className="size-4" aria-hidden />
         </span>
       </Link>

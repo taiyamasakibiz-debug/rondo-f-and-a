@@ -1,9 +1,12 @@
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { useMemo } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { Link } from 'react-router'
+import { ARROW_HOVER } from '@/components/ArrowDot'
 import { PageHeader } from '@/components/PageHeader'
+import { unitPracticePath } from '@/course/units'
 import { LABS, type Lab, findLab } from '@/features/labs/labs'
+import { cn } from '@/lib/utils'
 import { findTemplate } from '@/problems'
 import { StageCertification } from '@/features/exam/StageCertification'
 import {
@@ -122,51 +125,70 @@ function CourseSection() {
   const phase = usePhase()
   const forecast = useStudyForecast()
   const current = course.stages.find((entry) => entry.stage.id === course.currentStage)
+  const { level, points, nextPoints } = course.level
+  const nextUnit = course.nextUnit
+  const nextPath = nextUnit && unitPracticePath(nextUnit.unit, topicOfTemplate)
 
   return (
     <section>
       <SectionHeading number="02" en="Course" ja="学習コース" />
-      <div className="mb-6 grid gap-6 md:grid-cols-[1fr_2fr]">
-        <KeyNumber
+      <div className="mb-10 grid gap-4 md:grid-cols-3 md:gap-6">
+        <CourseCard
           label="COURSE LEVEL"
-          value={course.level.level}
+          value={level}
           unit="/ 10"
-          note={
-            course.level.nextPoints === null
-              ? '最大レベル'
-              : `定着した単元の点 ${course.level.points} / ${course.level.maxPoints}。次のレベルまで あと ${course.level.nextPoints - course.level.points} 点（Stage 1 の単元は 1 点、Stage 2 は 2 点、Stage 3 は 3 点）`
+          caption="単元を定着させるたびに上がる"
+          progress={nextPoints === null ? 1 : points / nextPoints}
+          progressLabel="次のコースレベルまで"
+          foot={
+            nextPoints === null ? '最高レベル' : `次のレベルまで あと ${nextPoints - points} 点`
           }
         />
-        <div className="flex flex-col justify-center gap-2 rounded-md bg-fog p-6">
-          {course.nextUnit && current ? (
-            <p className="font-ja text-[15px] tracking-ja">
-              いまは <strong>Stage {current.stage.id}</strong>。次は{' '}
-              <strong>{course.nextUnit.unit.name}</strong>
-              {course.nextUnit.state === 'learning' ? 'のつづき' : 'から'}です。
-            </p>
-          ) : (
-            <p className="font-ja text-[15px] tracking-ja">
-              {current
-                ? `Stage ${current.stage.id} の単元を、間を空けて解き直すと定着になります。`
-                : 'いま取り組める単元は、すべて定着しました。'}
-            </p>
-          )}
-          <p className="text-caption text-ink-muted">
-            今は{PHASE_LABELS[phase.phase].name}（{PHASE_LABELS[phase.phase].description}）
-            {phase.daysLeft !== null && `。あと ${phase.daysLeft} 日`}
-          </p>
-          {forecast.remainingMinutes > 0 && (
-            <p className="text-caption text-ink-muted">
-              残りの単元を目安の回数まで解くと、約 {formatHours(forecast.remainingMinutes)}
-              {forecast.minutesPerWeek !== null &&
-                `。マスターしたい月の末までに終えるには、1 週間に約 ${formatHours(forecast.minutesPerWeek)}`}
-              （復習・解説・認定テストの分を含む。想定時間は、実際に解いた時間で補正）
-            </p>
-          )}
-          <p className="text-caption text-ink-muted">
-            レベルは、一度定着した単元の点で決まります。要復習になっても下がりません。
-          </p>
-        </div>
+        <CourseCard
+          label="STAGE"
+          value={current?.stage.id ?? 3}
+          unit="/ 3"
+          caption={current?.stage.name ?? 'すべての Stage を修了'}
+          progress={
+            current && current.gateUnits.length > 0
+              ? current.consolidatedCount / current.gateUnits.length
+              : 1
+          }
+          progressLabel="この Stage の定着した単元"
+          foot={
+            current ? (
+              <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span>
+                  定着 {current.consolidatedCount} / {current.gateUnits.length} 単元
+                </span>
+                {nextUnit && nextPath && (
+                  <Link
+                    to={nextPath}
+                    className="font-bold text-ink underline-offset-4 hover:underline"
+                  >
+                    次は {nextUnit.unit.name} →
+                  </Link>
+                )}
+              </span>
+            ) : (
+              '修了'
+            )
+          }
+        />
+        <CourseCard
+          label="PHASE"
+          title={PHASE_LABELS[phase.phase].name}
+          caption={
+            phase.daysLeft !== null && phase.endsOn
+              ? `${phase.endsOn.replaceAll('-', '.')} まで あと ${phase.daysLeft} 日`
+              : PHASE_LABELS[phase.phase].description
+          }
+          foot={
+            forecast.minutesPerWeek !== null && forecast.remainingMinutes > 0
+              ? `目安のペース：週に約 ${formatHours(forecast.minutesPerWeek)}`
+              : PHASE_LABELS[phase.phase].description
+          }
+        />
       </div>
       <div className="flex flex-col gap-10">
         {course.stages.map((entry) => (
@@ -177,11 +199,57 @@ function CourseSection() {
   )
 }
 
+const topicOfTemplate = (id: string) => findTemplate(id)?.topic
+
+/** 学習コースのカード：英字のラベル、大きな値（または名前）、一言、下の段（バーと補足） */
+function CourseCard({
+  label,
+  value,
+  unit,
+  title,
+  caption,
+  progress,
+  progressLabel,
+  foot,
+}: {
+  label: string
+  value?: number
+  unit?: string
+  title?: string
+  caption: string
+  progress?: number
+  progressLabel?: string
+  foot: ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-paper p-6 md:p-8">
+      <span className="text-[13px] font-bold tracking-caps text-ink-muted">{label}</span>
+      {value !== undefined ? (
+        <div className="flex items-baseline gap-2">
+          <span className="text-[56px] leading-none font-bold tracking-tight tabular-nums">
+            {value}
+          </span>
+          {unit && <span className="text-label text-ink-muted">{unit}</span>}
+        </div>
+      ) : (
+        <span className="font-ja text-[28px] leading-tight font-bold tracking-ja">{title}</span>
+      )}
+      <span className="font-ja text-[15px] font-bold tracking-ja">{caption}</span>
+      <div className="mt-auto flex flex-col gap-2 pt-2">
+        {progress !== undefined && progressLabel && (
+          <ProgressBar value={progress} label={progressLabel} />
+        )}
+        <span className="text-caption text-ink-muted tabular-nums">{foot}</span>
+      </div>
+    </div>
+  )
+}
+
 function StageBlock({ entry }: { entry: StageProgress }) {
   const { stage, gateUnits, consolidatedCount, cleared } = entry
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h3 className="flex items-baseline gap-4">
           <span className="text-[13px] font-bold tracking-caps text-ink-muted">
             STAGE {stage.id}
@@ -189,13 +257,10 @@ function StageBlock({ entry }: { entry: StageProgress }) {
           <span className="font-ja text-[18px] font-bold tracking-ja">{stage.name}</span>
         </h3>
         <span className="text-caption text-ink-muted tabular-nums">
-          {gateUnits.length === 0
-            ? '問題を準備中'
-            : `${consolidatedCount} / ${gateUnits.length} 定着`}
-          {cleared && <span className="ml-3">修了</span>}
+          {cleared ? '修了' : `定着 ${consolidatedCount} / ${gateUnits.length}`}
         </span>
       </div>
-      <p className="mb-2 text-caption text-ink-muted">{stage.description}</p>
+      <p className="mb-3 text-caption text-ink-muted">{stage.description}</p>
       <ul className="flex flex-col">
         {entry.units.map((progress) => (
           <UnitRow key={progress.unit.id} progress={progress} />
@@ -206,36 +271,68 @@ function StageBlock({ entry }: { entry: StageProgress }) {
   )
 }
 
+/** 単元の行。押すと、その単元の問題を解く画面に移る */
 function UnitRow({ progress }: { progress: UnitProgress }) {
   const { unit, state } = progress
   const priority = PRIORITY_LABEL[unit.priority]
-  return (
-    <li className="grid gap-2 border-t border-line py-4 last:border-b md:grid-cols-[1fr_auto] md:items-center md:gap-8">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <span className="font-ja text-[15px] font-bold tracking-ja">{unit.name}</span>
-        {priority && <span className="text-[11px] tracking-ja text-ink-muted">{priority}</span>}
-        {!progress.prerequisitesMet && state !== 'preparing' && (
-          <span className="text-[11px] tracking-ja text-ink-muted">前提の単元が先</span>
-        )}
-      </div>
-      <div className="flex items-center gap-4 text-caption text-ink-muted tabular-nums">
-        {state !== 'preparing' && state !== 'untouched' && (
-          <span>
-            型 {progress.attemptedCount} / {progress.templateCount}
-            {progress.accuracy !== null && (
-              <span className="ml-3">正確さ {Math.round(progress.accuracy * 100)}%</span>
-            )}
-            <span className="ml-3">
-              定着 {progress.retention === null ? '—' : `${Math.round(progress.retention * 100)}%`}
-            </span>
-            {/* 速さは、序盤は見せない（解き方を身につける前に時間を気にさせない）。Stage 3 から */}
-            {unit.stage === 3 && progress.speed !== null && (
-              <span className="ml-3">速さ {progress.speed.toFixed(1)} 倍</span>
-            )}
+  const path = unitPracticePath(unit, topicOfTemplate)
+  const content = (
+    <>
+      <div className="flex min-w-0 flex-1 flex-col gap-1 md:flex-row md:items-center md:gap-8">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="font-ja text-[15px] font-bold tracking-ja group-hover:text-ember-text">
+            {unit.name}
           </span>
-        )}
-        <StateTag state={state} />
+          {priority && <span className="text-[11px] tracking-ja text-ink-muted">{priority}</span>}
+          {!progress.prerequisitesMet && state !== 'preparing' && (
+            <span className="text-[11px] tracking-ja text-ink-muted">前提の単元が先</span>
+          )}
+        </div>
+        <div className="flex items-center gap-4 text-caption text-ink-muted tabular-nums">
+          {state !== 'preparing' && state !== 'untouched' && (
+            <span>
+              型 {progress.attemptedCount} / {progress.templateCount}
+              {progress.accuracy !== null && (
+                <span className="ml-3">正確さ {Math.round(progress.accuracy * 100)}%</span>
+              )}
+              {progress.retention !== null && (
+                <span className="ml-3">復習 {Math.round(progress.retention * 100)}%</span>
+              )}
+              {/* 速さは、解き方が身につく前は気にさせない（Stage 3 だけ） */}
+              {unit.stage === 3 && progress.speed !== null && (
+                <span className="ml-3">速さ {progress.speed.toFixed(1)} 倍</span>
+              )}
+            </span>
+          )}
+          <StateTag state={state} />
+        </div>
       </div>
+      {path && (
+        <span
+          className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink',
+            ARROW_HOVER,
+          )}
+          aria-hidden
+        >
+          <ArrowRight className="size-4" />
+        </span>
+      )}
+    </>
+  )
+  return (
+    <li className="border-t border-line last:border-b">
+      {path ? (
+        <Link
+          to={path}
+          aria-label={`${unit.name}の問題を解く（${STATE_LABEL[state]}）`}
+          className="group flex items-center gap-4 py-4"
+        >
+          {content}
+        </Link>
+      ) : (
+        <div className="flex items-center gap-4 py-4">{content}</div>
+      )}
     </li>
   )
 }
@@ -299,10 +396,7 @@ function LevelsSection() {
   return (
     <section>
       <SectionHeading number="03" en="Labs" ja="ラボごとの努力量と熟練度" />
-      <p className="mb-4 text-caption text-ink-muted">
-        XP
-        は解いた量（積み上げた努力量）、熟練度は直近の得点率です。実力の目安は、上の学習コースのレベルと単元の状態で見ます。
-      </p>
+      <p className="mb-4 text-caption text-ink-muted">XP は解いた量、熟練度は直近の得点率です。</p>
       <ul className="flex flex-col">
         {LABS.map((lab) => (
           <LevelRow key={lab.id} lab={lab} />
@@ -391,7 +485,10 @@ function MistakesSection() {
                     </span>
                   </span>
                   <span
-                    className="flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink transition-colors group-hover:bg-ink group-hover:text-on-ink"
+                    className={cn(
+                      'flex size-10 shrink-0 items-center justify-center rounded-pill border border-ink',
+                      ARROW_HOVER,
+                    )}
                     aria-hidden
                   >
                     <ArrowRight className="size-4" />

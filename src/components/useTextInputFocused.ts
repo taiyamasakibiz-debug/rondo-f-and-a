@@ -1,27 +1,33 @@
 import { useEffect, useState } from 'react'
 
+/**
+ * キーボードが出ない入力欄。日付や月はピッカー（スマホでは回して選ぶ部品）が出るだけで、
+ * 見えている高さが変わらないので、閉じたことに気づけず、下のタブが隠れたままになってしまう
+ */
 const NON_TEXT_INPUTS = new Set([
   'button',
   'checkbox',
   'color',
+  'date',
+  'datetime-local',
   'file',
   'hidden',
   'image',
+  'month',
   'radio',
   'range',
   'reset',
   'submit',
+  'time',
+  'week',
 ])
 
 /** キーボード（スマホではソフトウェアキーボード）で入力する要素か */
 export function isTextEntry(element: Element | null): boolean {
   if (!(element instanceof HTMLElement)) return false
   if (element instanceof HTMLInputElement) return !NON_TEXT_INPUTS.has(element.type)
-  return (
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement ||
-    element.isContentEditable === true
-  )
+  // 選択欄（select）もキーボードではなくピッカーが出るので数えない
+  return element instanceof HTMLTextAreaElement || element.isContentEditable === true
 }
 
 /** 見えている高さがこれだけ減っていたら、キーボードが出ているとみなす */

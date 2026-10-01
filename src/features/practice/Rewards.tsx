@@ -43,7 +43,7 @@ export function RewardPanel({ reward }: { reward: Reward }) {
             from={reward.totalBefore}
             className="text-label text-ink"
           />{' '}
-          XP（積み上げた努力量）
+          XP
         </span>
       </motion.div>
 

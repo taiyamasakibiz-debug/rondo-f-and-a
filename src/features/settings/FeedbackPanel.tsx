@@ -97,7 +97,7 @@ export function FeedbackPanel() {
       <div className="flex flex-col gap-4">
         <Toggle
           label="効果音"
-          help="採点・レベルアップ・ストリーク・認定のときに鳴らします。"
+          help="採点・定着・ストリーク・認定のときに鳴らします。"
           checked={preferences.se}
           onChange={(se) => update({ se })}
         />
@@ -131,7 +131,7 @@ export function FeedbackPanel() {
           正解の音を試す
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={() => feedback('levelUp')}>
-          レベルアップの音を試す
+          定着の音を試す
         </Button>
       </div>
     </>
