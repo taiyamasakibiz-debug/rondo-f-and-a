@@ -7,11 +7,19 @@ import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'ホーム', labelEn: 'Home', end: true },
-  { to: '/labs', label: 'ラボ', labelEn: 'Labs', end: false },
-  { to: '/records', label: '記録', labelEn: 'Records', end: false },
-  { to: '/settings', label: '設定', labelEn: 'Settings', end: false },
+  { to: '/', label: 'Home', end: true },
+  { to: '/labs', label: 'Labs', end: false },
+  { to: '/records', label: 'Records', end: false },
+  { to: '/settings', label: 'Settings', end: false },
 ] as const
+
+/** ナビの 1 項目。PC の上のナビとスマホの下のタブで同じ見た目にする */
+function navLinkClass({ isActive }: { isActive: boolean }) {
+  return cn(
+    'flex items-center justify-center rounded-pill py-3 text-label text-ink-muted transition-colors hover:text-ink',
+    isActive && 'bg-ink text-on-ink hover:text-on-ink',
+  )
+}
 
 export function AppLayout() {
   const location = useLocation()
@@ -48,14 +56,9 @@ export function AppLayout() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    'rounded-pill px-5 py-3 text-label text-ink-muted transition-colors hover:text-ink',
-                    isActive && 'bg-ink text-on-ink hover:text-on-ink',
-                  )
-                }
+                className={(state) => cn(navLinkClass(state), 'px-5')}
               >
-                {item.labelEn}
+                {item.label}
               </NavLink>
             ))}
           </nav>
@@ -73,7 +76,7 @@ export function AppLayout() {
         </motion.div>
       </main>
 
-      {/* スマホは画面下のピル型タブで移動する。Tessera はアイコンを矢印だけにするため文字だけで示す。
+      {/* スマホは画面下のピル型タブで移動する（PC の上のナビと同じ表示）。Tessera はアイコンを矢印だけにするため文字だけで示す。
           キーボードが出ている間は、スクロールでずれて入力の邪魔になるので隠す */}
       <nav
         aria-label="メインナビゲーション（モバイル）"
@@ -82,19 +85,14 @@ export function AppLayout() {
           typing && 'hidden',
         )}
       >
-        <ul className="grid grid-cols-4 rounded-pill border border-line bg-white/70 p-1.5 backdrop-blur-md">
+        <ul className="grid grid-cols-4 rounded-pill border border-line bg-white/60 p-1.5 backdrop-blur-md">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 end={item.end}
                 onClick={() => feedback('tap')}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center justify-center rounded-pill py-3 font-ja text-[13px] font-bold tracking-[0.1em] text-ink-muted transition-colors',
-                    isActive && 'bg-ink text-on-ink',
-                  )
-                }
+                className={navLinkClass}
               >
                 {item.label}
               </NavLink>
