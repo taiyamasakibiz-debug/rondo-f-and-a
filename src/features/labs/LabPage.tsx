@@ -4,7 +4,6 @@ import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { templatesForTopic } from '@/problems'
-import { CertificationSection } from '@/features/exam/CertificationSection'
 import { findLab } from './labs'
 
 export function LabPage() {
@@ -50,7 +49,6 @@ export function LabPage() {
               </Button>
             )}
           </div>
-          <CertificationSection topic={lab.id} />
         </div>
       )}
     </>

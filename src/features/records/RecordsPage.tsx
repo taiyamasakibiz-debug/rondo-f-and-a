@@ -5,9 +5,8 @@ import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { LABS, type Lab, findLab } from '@/features/labs/labs'
 import { findTemplate } from '@/problems'
-import { CertBadge } from '@/features/exam/CertBadge'
-import { TIER_RULES } from '@/progress/certification'
-import { useCertification, useCourse, useStreak, useTopicProgress } from '@/progress/hooks'
+import { StageCertification } from '@/features/exam/StageCertification'
+import { useCourse, useStreak, useTopicProgress } from '@/progress/hooks'
 import type { StageProgress, UnitProgress, UnitState } from '@/progress/units'
 import { MAX_FREEZES } from '@/progress/streak'
 import { useProgressStore } from '@/progress/store'
@@ -172,11 +171,7 @@ function StageBlock({ entry }: { entry: StageProgress }) {
           {gateUnits.length === 0
             ? '問題を準備中'
             : `${consolidatedCount} / ${gateUnits.length} 定着`}
-          <span className="ml-3">
-            {cleared
-              ? `${TIER_RULES[stage.tier].label}認定を受けられます`
-              : `修了で${TIER_RULES[stage.tier].label}認定`}
-          </span>
+          {cleared && <span className="ml-3">修了</span>}
         </span>
       </div>
       <p className="mb-2 text-caption text-ink-muted">{stage.description}</p>
@@ -185,6 +180,7 @@ function StageBlock({ entry }: { entry: StageProgress }) {
           <UnitRow key={progress.unit.id} progress={progress} />
         ))}
       </ul>
+      <StageCertification tier={stage.tier} />
     </div>
   )
 }
@@ -285,13 +281,11 @@ function LevelsSection() {
 
 function LevelRow({ lab }: { lab: Lab }) {
   const progress = useTopicProgress(lab.id)
-  const certification = useCertification(lab.id)
   return (
     <li className="grid gap-3 border-t border-line py-6 last:border-b md:grid-cols-[1fr_2fr] md:items-center md:gap-8">
       <div className="flex items-baseline gap-4">
         <span className="text-[22px] font-bold tracking-snug">{lab.nameEn}</span>
         <span className="font-ja text-[13px] font-bold tracking-ja text-ink-muted">{lab.name}</span>
-        {certification && <CertBadge tier={certification} />}
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-4 text-caption text-ink-muted">

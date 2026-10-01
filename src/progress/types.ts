@@ -28,6 +28,13 @@ export const attemptSchema = z.object({
       /** テストの何問目か（0 から） */
       index: z.number().int().nonnegative(),
       startedAt: z.iso.datetime({ offset: true }),
+      /**
+       * 受けたときの制限時間・合格ライン・問題数。あとで設計を変えても過去の合否が変わらないよう、記録しておく。
+       * ない記録は、論点ごとのテストだった旧形式（認定の判定には使わない）
+       */
+      timeLimitMs: z.number().positive().optional(),
+      passRatio: z.number().min(0).max(1).optional(),
+      size: z.number().int().positive().optional(),
     })
     .optional(),
 })

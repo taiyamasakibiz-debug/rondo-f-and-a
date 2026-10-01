@@ -1,8 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link } from 'react-router'
-import { CertBadge } from '@/features/exam/CertBadge'
-import { useCertification, useTopicProgress } from '@/progress/hooks'
+import { useTopicProgress } from '@/progress/hooks'
 import type { Lab } from './labs'
 
 type LabCardProps = {
@@ -14,7 +13,6 @@ type LabCardProps = {
 export function LabCard({ lab, index }: LabCardProps) {
   const reduceMotion = useReducedMotion()
   const progress = useTopicProgress(lab.id)
-  const certification = useCertification(lab.id)
   const number = String(index + 1).padStart(2, '0')
 
   return (
@@ -31,7 +29,6 @@ export function LabCard({ lab, index }: LabCardProps) {
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-bold tracking-caps text-ink-muted">{number}</span>
           <span className="flex items-center gap-2">
-            {certification && <CertBadge tier={certification} />}
             <span className="rounded-pill border border-line px-3 py-1 text-[11px] font-bold tracking-[0.1em]">
               LV.{progress.level}
             </span>

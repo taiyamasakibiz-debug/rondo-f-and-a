@@ -31,10 +31,10 @@ export function useTopicProgress(topic: Topic) {
   return useMemo(() => topicProgress(attempts, topic), [attempts, topic])
 }
 
-/** 論点ごとに、合格したいちばん上の認定 */
-export function useCertification(topic: Topic) {
+/** 合格したいちばん上の認定 */
+export function useCertification() {
   const attempts = useProgressStore((state) => state.attempts)
-  return useMemo(() => certificationOf(attempts, topic), [attempts, topic])
+  return useMemo(() => certificationOf(attempts), [attempts])
 }
 
 /** コースの現在地（Stage の進み具合と単元の状態） */

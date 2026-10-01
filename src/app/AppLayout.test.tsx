@@ -221,42 +221,54 @@ describe('フリーモード', () => {
 })
 
 describe('認定テスト', () => {
-  async function withCvpLevel2() {
+  /** 単元の型を 1 回ずつ解いた記録を保存する */
+  async function withPractice(unitIds: string[]) {
     const { useProgressStore } = await import('@/progress/store')
+    const { findUnit } = await import('@/course/units')
     await useProgressStore.getState().load()
     const at = new Date().toISOString()
-    // 全問正解 2 回（30 XP）で Lv.2
-    const practice = [1, 2].map((seed) => ({
-      id: `practice-${seed}`,
-      templateId: 'cvp.break-even.basic',
-      topic: 'cvp' as const,
-      seed,
-      earned: 5,
-      total: 5,
-      allCorrect: true,
-      steps: [],
-      durationMs: 1,
-      answeredAt: at,
-      createdAt: at,
-      updatedAt: at,
-    }))
+    const practice = unitIds
+      .flatMap((id) => findUnit(id)!.templateIds)
+      .map((templateId, i) => ({
+        id: `practice-${i}`,
+        templateId,
+        topic: 'cvp' as const,
+        seed: i,
+        earned: 5,
+        total: 5,
+        allCorrect: true,
+        steps: [],
+        durationMs: 1,
+        answeredAt: at,
+        createdAt: at,
+        updatedAt: at,
+      }))
     await useProgressStore.getState().replaceAll({
       attempts: practice,
       settings: useProgressStore.getState().settings,
     })
     return useProgressStore
   }
+  const STAGE1 = ['acc-bs-pl', 'acc-ca', 'acc-cf', 'mgt-cvp']
 
-  it('レベルが足りない認定は受けられない', async () => {
-    await withCvpLevel2()
-    await renderAt('/labs/cvp/exam/silver')
-    expect(await screen.findByText(/Lv\.4 から受けられます/)).toBeInTheDocument()
+  it('1 つ下の認定がないシルバーは受けられない', async () => {
+    await withPractice([...STAGE1, 'fin-npv'])
+    await renderAt('/exam/silver')
+    expect(await screen.findByText(/ブロンズ認定のあとに受けられます/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /テストを始める/ })).not.toBeInTheDocument()
   })
 
-  it('5 問を解くと採点結果が出て、記録にテストの情報が残る', async () => {
-    const store = await withCvpLevel2()
-    await renderAt('/labs/cvp/exam/bronze')
+  it('Stage の単元をまだ解いていないブロンズは受けられない', async () => {
+    await withPractice(['mgt-cvp'])
+    await renderAt('/exam/bronze')
+    expect(await screen.findByText(/の問題を 1 回以上解くと受けられます/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /テストを始める/ })).not.toBeInTheDocument()
+  })
+
+  it('5 問を解くと採点結果が出て、記録にテストの情報（制限時間・合格ライン）が残る', async () => {
+    const store = await withPractice(STAGE1)
+    await renderAt('/exam/bronze')
+    expect(await screen.findByText('25 分')).toBeInTheDocument()
     await userEvent.click(await screen.findByRole('button', { name: /テストを始める/ }))
     for (let i = 1; i <= 5; i += 1) {
       expect(await screen.findByText(`Q${i} / 5`)).toBeInTheDocument()
@@ -269,6 +281,24 @@ describe('認定テスト', () => {
     const examAttempts = store.getState().attempts.filter((a) => a.exam)
     expect(examAttempts).toHaveLength(5)
     expect(new Set(examAttempts.map((a) => a.exam!.id)).size).toBe(1)
+    expect(examAttempts[0]!.exam).toMatchObject({
+      tier: 'bronze',
+      timeLimitMs: 25 * 60_000,
+      passRatio: 0.8,
+      size: 5,
+    })
+    // 単元をまたいで出る
+    expect(new Set(examAttempts.map((a) => a.topic)).size).toBeGreaterThan(1)
+  })
+
+  it('記録の画面に、Stage ごとの認定が出る', async () => {
+    await withPractice(STAGE1)
+    await renderAt('/records')
+    expect(await screen.findByRole('link', { name: '受験する' })).toHaveAttribute(
+      'href',
+      '/exam/bronze',
+    )
+    expect(screen.getAllByText(/認定のあとに受けられます|問題は準備中/).length).toBeGreaterThan(0)
   })
 })
 

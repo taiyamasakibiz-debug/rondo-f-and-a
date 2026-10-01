@@ -23,7 +23,7 @@ const STAMP_AT = 0.3 + DRAW * 0.7
  * 認定テストに合格したときの「認定証」。
  * 枠線が一筆で描かれ、描き終わる直前にバッジが押されて波紋が広がり、光の帯が横切る。
  */
-export function CertifiedCard({ tier, labName }: { tier: Tier; labName: string }) {
+export function CertifiedCard({ tier, caption }: { tier: Tier; caption: string }) {
   const reduceMotion = useReducedMotion()
   // バッジが押される瞬間に鳴らす
   useEffect(() => feedbackLater('certified', STAMP_AT), [])
@@ -69,7 +69,7 @@ export function CertifiedCard({ tier, labName }: { tier: Tier; labName: string }
         <CertBadge tier={tier} className="bg-white/70 px-5 py-2 text-[15px] dark:bg-transparent" />
         <Burst delay={STAMP_AT + 0.08} sparks={14} className={BURST_COLOR[tier]} />
       </motion.span>
-      <span className="relative font-ja text-[13px] text-ink-muted">{labName}</span>
+      <span className="relative font-ja text-[13px] text-ink-muted">{caption}</span>
     </motion.div>
   )
 }

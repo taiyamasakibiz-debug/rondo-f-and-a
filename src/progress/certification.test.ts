@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { UNITS, findUnit } from '@/course/units'
 import type { ProblemTemplate } from '@/engine/types'
+import { PROBLEM_TEMPLATES } from '@/problems'
 import {
-  EXAM_SIZE,
+  TIERS,
   TIER_RULES,
   type Tier,
   buildExam,
@@ -9,8 +11,7 @@ import {
   examEligibility,
   examResults,
 } from './certification'
-import { LEVEL_THRESHOLDS } from './level'
-import type { Attempt } from './types'
+import { type Attempt, DEFAULT_SETTINGS } from './types'
 
 let nextId = 0
 function attempt(overrides: Partial<Attempt> = {}): Attempt {
@@ -18,7 +19,7 @@ function attempt(overrides: Partial<Attempt> = {}): Attempt {
   const at = '2026-10-01T03:00:00.000Z'
   return {
     id: `a${nextId}`,
-    templateId: 'cvp.x',
+    templateId: 'cvp.break-even.basic',
     topic: 'cvp',
     seed: nextId,
     earned: 5,
@@ -37,46 +38,68 @@ const START = '2026-10-01T03:00:00.000Z'
 const minutesAfter = (minutes: number) =>
   new Date(Date.parse(START) + minutes * 60_000).toISOString()
 
-/** 認定テスト 1 回分の記録。scores は各問の得点（満点 5） */
-function exam(tier: Tier, scores: number[], id = `exam-${tier}-${(nextId += 1)}`, minutes = 1) {
+/** 認定テスト 1 回分の記録。scores は各問の得点（満点 5）。制限時間と合格ラインは、受けたときの値を記録する */
+function exam(
+  tier: Tier,
+  scores: number[],
+  { id = `exam-${tier}-${(nextId += 1)}`, minutes = 1, timeLimitMin = 25, passRatio = 0.8 } = {},
+) {
   return scores.map((earned, index) =>
     attempt({
       earned,
       allCorrect: earned === 5,
       answeredAt: minutesAfter(minutes),
-      exam: { id, tier, index, startedAt: START },
+      exam: {
+        id,
+        tier,
+        index,
+        startedAt: START,
+        timeLimitMs: timeLimitMin * 60_000,
+        passRatio,
+        size: 5,
+      },
     }),
   )
 }
 
-/** Lv.n に届くだけの練習の記録（全問正解 1 回で 15 XP。型を変えて、XP の上限に当たらないようにする） */
-function practiceToLevel(level: number) {
-  const xp = LEVEL_THRESHOLDS[level - 1]!
-  return Array.from({ length: Math.ceil(xp / 15) }, (_, i) =>
-    attempt({ templateId: `practice.${i}` }),
+/** 単元のどの型も 1 回ずつ解いた記録 */
+function touched(...unitIds: string[]): Attempt[] {
+  return unitIds.flatMap((id) =>
+    findUnit(id)!.templateIds.map((templateId) => attempt({ templateId })),
   )
 }
 
+const now = new Date('2026-10-02T03:00:00.000Z')
+
 describe('examResults', () => {
-  it('合格ライン以上なら合格', () => {
-    const [result] = examResults(exam('bronze', [3, 3, 3, 3, 3])) // 60%
-    expect(result).toMatchObject({ answered: 5, earned: 15, total: 25, passed: true })
-    expect(result!.ratio).toBeCloseTo(0.6)
+  it('受けたときの合格ライン以上なら合格', () => {
+    const [result] = examResults(exam('bronze', [4, 4, 4, 4, 4])) // 80%
+    expect(result).toMatchObject({ answered: 5, earned: 20, total: 25, passed: true })
+    expect(result!.ratio).toBeCloseTo(0.8)
   })
 
   it('合格ラインに届かなければ不合格', () => {
-    const [result] = examResults(exam('silver', [5, 5, 5, 3, 0])) // 72%
+    const [result] = examResults(exam('silver', [5, 5, 5, 3, 0], { passRatio: 0.7 })) // 72%
+    expect(result!.passed).toBe(true)
+    const [fail] = examResults(exam('silver', [5, 5, 5, 0, 0], { passRatio: 0.7 })) // 60%
+    expect(fail!.passed).toBe(false)
+  })
+
+  it('合格ラインは、受けたときの値で判定する（あとで設計を変えても、過去の合否は変わらない）', () => {
+    const [lenient] = examResults(exam('bronze', [3, 3, 3, 3, 3], { passRatio: 0.6 }))
+    expect(lenient!.passed).toBe(true)
+    const [strict] = examResults(exam('bronze', [3, 3, 3, 3, 3], { passRatio: 0.8 }))
+    expect(strict!.passed).toBe(false)
+  })
+
+  it('途中でやめたとき、残りは 0 点として数える', () => {
+    const [result] = examResults(exam('bronze', [5, 5, 5]))
+    expect(result).toMatchObject({ answered: 3, size: 5, total: 25, earned: 15 })
     expect(result!.passed).toBe(false)
   })
 
-  it('途中でやめた問題は 0 点として数える', () => {
-    const [result] = examResults(exam('bronze', [5, 5])) // 10 / 25
-    expect(result).toMatchObject({ answered: 2, earned: 10, total: 25, passed: false })
-  })
-
   it('制限時間を過ぎてから解いた問題は 0 点', () => {
-    const limit = TIER_RULES.bronze.timeLimitMs / 60_000
-    const late = exam('bronze', [5, 5, 5, 5, 5], 'late', limit + 1)
+    const late = exam('bronze', [5, 5, 5, 5, 5], { minutes: 26, timeLimitMin: 25 })
     const [result] = examResults(late)
     expect(result).toMatchObject({ earned: 0, passed: false })
   })
@@ -84,46 +107,120 @@ describe('examResults', () => {
   it('練習の記録は認定テストとして数えない', () => {
     expect(examResults([attempt(), attempt()])).toEqual([])
   })
+
+  it('論点ごとのテストだった旧形式の記録は、認定に数えない', () => {
+    const legacy = [0, 1, 2, 3, 4].map((index) =>
+      attempt({ exam: { id: 'old', tier: 'bronze', index, startedAt: START } }),
+    )
+    expect(examResults(legacy)).toEqual([])
+    expect(certificationOf(legacy)).toBeNull()
+  })
 })
 
-describe('certificationOf と examEligibility', () => {
+describe('certificationOf', () => {
   it('合格したいちばん上の認定を返す', () => {
-    const attempts = [...exam('bronze', [5, 5, 5, 5, 5]), ...exam('silver', [5, 5, 5, 5, 5])]
-    expect(certificationOf(attempts, 'cvp')).toBe('silver')
-    expect(certificationOf(attempts, 'npv')).toBeNull()
+    const attempts = [
+      ...exam('bronze', [5, 5, 5, 5, 5]),
+      ...exam('silver', [5, 5, 5, 5, 5], { passRatio: 0.7 }),
+    ]
+    expect(certificationOf(attempts)).toBe('silver')
+    expect(certificationOf(exam('bronze', [5, 5, 5, 5, 5]))).toBe('bronze')
+    expect(certificationOf([])).toBeNull()
   })
+})
 
-  it('レベルが足りなければ受けられない', () => {
-    const result = examEligibility([], 'cvp', 'bronze')
-    expect(result).toMatchObject({ eligible: false, reason: expect.stringContaining('Lv.2') })
-    expect(examEligibility(practiceToLevel(2), 'cvp', 'bronze')).toEqual({ eligible: true })
+describe('examEligibility', () => {
+  const stage1 = ['acc-bs-pl', 'acc-ca', 'acc-cf', 'mgt-cvp']
+
+  it('Stage 1 の単元を 1 回ずつ解くまで、ブロンズは受けられない', () => {
+    const result = examEligibility(touched('mgt-cvp'), 'bronze', DEFAULT_SETTINGS, now)
+    expect(result).toMatchObject({
+      eligible: false,
+      reason: expect.stringContaining('経営分析'),
+    })
+    expect(examEligibility(touched(...stage1), 'bronze', DEFAULT_SETTINGS, now)).toEqual({
+      eligible: true,
+    })
   })
 
   it('1 つ下の認定がなければ受けられない', () => {
-    const levelled = practiceToLevel(4)
-    expect(examEligibility(levelled, 'cvp', 'silver')).toMatchObject({ eligible: false })
-    const withBronze = [...levelled, ...exam('bronze', [5, 5, 5, 5, 5])]
-    expect(examEligibility(withBronze, 'cvp', 'silver')).toEqual({ eligible: true })
+    const practised = touched(...stage1, 'fin-npv')
+    expect(examEligibility(practised, 'silver', DEFAULT_SETTINGS, now)).toMatchObject({
+      eligible: false,
+      reason: expect.stringContaining('ブロンズ'),
+    })
+    const withBronze = [...practised, ...exam('bronze', [5, 5, 5, 5, 5])]
+    expect(examEligibility(withBronze, 'silver', DEFAULT_SETTINGS, now)).toEqual({
+      eligible: true,
+    })
+  })
+
+  it('問題がまだない Stage のテストは、準備中', () => {
+    const attempts = [
+      ...touched(...stage1, 'fin-npv'),
+      ...exam('bronze', [5, 5, 5, 5, 5]),
+      ...exam('silver', [5, 5, 5, 5, 5], { passRatio: 0.7 }),
+    ]
+    expect(examEligibility(attempts, 'gold', DEFAULT_SETTINGS, now)).toMatchObject({
+      eligible: false,
+      reason: expect.stringContaining('準備中'),
+    })
   })
 })
 
 describe('buildExam', () => {
-  const template = (id: string) => ({ id, topic: 'cf' }) as ProblemTemplate
+  const unitOf = (templateId: string) =>
+    UNITS.find((unit) => unit.templateIds.includes(templateId))!.id
 
-  it(`${EXAM_SIZE} 問を、テンプレートが偏らないように選ぶ`, () => {
-    const items = buildExam([template('a'), template('b')], 1)
-    expect(items).toHaveLength(EXAM_SIZE)
-    const counts = items.reduce<Record<string, number>>((acc, item) => {
-      acc[item.templateId] = (acc[item.templateId] ?? 0) + 1
-      return acc
-    }, {})
-    expect(Object.values(counts).sort()).toEqual([2, 3])
-    // 同じテンプレートでも数値（シード）は違う
-    expect(new Set(items.map((item) => item.seed)).size).toBe(EXAM_SIZE)
+  it('ブロンズは、仕訳・経営分析・CVP・CF の単元から 1 問ずつ出し、足りない 1 問は使い回す', () => {
+    const { items } = buildExam('bronze', 1)
+    expect(items).toHaveLength(TIER_RULES.bronze.size)
+    const units = items.map((item) => unitOf(item.templateId))
+    expect(units.slice(0, 4)).toEqual(['acc-bs-pl', 'acc-ca', 'mgt-cvp', 'acc-cf'])
+    // 時間価値は問題がまだないので、最初の枠（仕訳）に戻る
+    expect(units[4]).toBe('acc-bs-pl')
   })
 
-  it('同じシードなら同じ問題になる', () => {
-    const templates = [template('a'), template('b'), template('c')]
-    expect(buildExam(templates, 7)).toEqual(buildExam(templates, 7))
+  it('同じ単元から続けて出すときは、別の型を選ぶ', () => {
+    const { items } = buildExam('bronze', 3)
+    const journal = items.filter((item) => item.templateId.startsWith('journal.'))
+    expect(new Set(journal.map((item) => item.templateId)).size).toBe(journal.length)
+  })
+
+  it('数値（シード）は問題ごとに違い、同じシードなら同じ問題になる', () => {
+    const plan = buildExam('silver', 7)
+    expect(new Set(plan.items.map((item) => item.seed)).size).toBe(TIER_RULES.silver.size)
+    expect(buildExam('silver', 7)).toEqual(plan)
+  })
+
+  it('難易度が目安に近い型を選ぶ（ブロンズなら、その単元でいちばん易しい型）', () => {
+    const { items } = buildExam('bronze', 5)
+    const analysis = items.find((item) => item.templateId.startsWith('analysis.'))!
+    const template = PROBLEM_TEMPLATES.find((t) => t.id === analysis.templateId)!
+    expect(template.difficulty).toBe(1)
+  })
+
+  it('制限時間は、出題した問題の想定時間の合計 × 係数（5 分単位）', () => {
+    // 仕訳 3 + 分析 4 + CVP 5 + CF 5 + 仕訳 3 = 20 分 → ×1.3 = 26 分 → 25 分
+    expect(buildExam('bronze', 1).timeLimitMs).toBe(25 * 60_000)
+    // 分析 4 + CVP 5 + CF 5 + NPV 7 + 分析 4 = 25 分 → ×1.0 = 25 分
+    expect(buildExam('silver', 1).timeLimitMs).toBe(25 * 60_000)
+  })
+
+  it('問題がまだない Stage は、出題が空になる', () => {
+    expect(buildExam('gold', 1)).toEqual({ items: [], timeLimitMs: 0 })
+  })
+
+  it('テンプレートを渡して、出題の元を差し替えられる', () => {
+    const only = PROBLEM_TEMPLATES.filter(
+      (t) => t.id === 'cvp.break-even.basic',
+    ) as ProblemTemplate[]
+    const { items } = buildExam('bronze', 1, only)
+    expect(items.every((item) => item.templateId === 'cvp.break-even.basic')).toBe(true)
+  })
+
+  it('3 つの認定は、Stage と合格ラインが順に上がる／下がる設計どおり', () => {
+    expect(TIERS.map((tier) => TIER_RULES[tier].stage)).toEqual([1, 2, 3])
+    expect(TIERS.map((tier) => TIER_RULES[tier].passRatio)).toEqual([0.8, 0.7, 0.6])
   })
 })
