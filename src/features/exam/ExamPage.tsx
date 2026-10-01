@@ -25,7 +25,7 @@ import {
   examResults,
 } from '@/progress/certification'
 import { useProgressStore } from '@/progress/store'
-import { CertBadge } from './CertBadge'
+import { CertifiedCard } from './CertifiedCard'
 
 type Topic = Parameters<typeof templatesForTopic>[0]
 
@@ -260,7 +260,6 @@ function ExamRunner({
 }
 
 function ExamResultView({ topic, tier, session }: { topic: Topic; tier: Tier; session: Session }) {
-  const reduceMotion = useReducedMotion()
   const attempts = useProgressStore((state) => state.attempts)
   const rule = TIER_RULES[tier]
   const result = examResults(attempts).find((r) => r.examId === session.id)
@@ -278,18 +277,7 @@ function ExamResultView({ topic, tier, session }: { topic: Topic; tier: Tier; se
         {Math.round(rule.passRatio * 100)}%）
       </AnswerFeedback>
 
-      {result?.passed && (
-        <motion.div
-          initial={reduceMotion ? false : { scale: 0.6, opacity: 0, rotate: -8 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 14, delay: 0.3 }}
-          className="flex flex-col items-center gap-3 self-center rounded-xl border border-line px-12 py-8"
-        >
-          <span className="text-[13px] font-bold tracking-caps text-ink-muted">CERTIFIED</span>
-          <CertBadge tier={tier} className="px-5 py-2 text-[15px]" />
-          <span className="font-ja text-[13px] text-ink-muted">{findLab(topic)!.name}</span>
-        </motion.div>
-      )}
+      {result?.passed && <CertifiedCard tier={tier} labName={findLab(topic)!.name} />}
 
       <ol className="flex flex-col">
         {session.items.map((item, index) => {

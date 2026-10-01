@@ -2,8 +2,6 @@ import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type FormEvent, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
-import { AnimatedNumber } from '@/components/AnimatedNumber'
-import { DigitalLines } from '@/components/DigitalLines'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { type Problem, generateProblem } from '@/engine/generate'
@@ -14,10 +12,11 @@ import { findLab } from '@/features/labs/labs'
 import { NotFoundPage } from '@/features/not-found/NotFoundPage'
 import { findTemplate, templatesForTopic } from '@/problems'
 import { dailyPracticePath } from '@/progress/daily'
-import { type LevelState, levelFromXp, topicProgress, xpForAttempt } from '@/progress/level'
+import { levelFromXp, topicProgress, xpForAttempt } from '@/progress/level'
 import { useProgressStore } from '@/progress/store'
 import { computeStreak } from '@/progress/streak'
 import { AnswerFeedback } from './AnswerFeedback'
+import { type Reward, RewardPanel } from './Rewards'
 import { ProblemBlocks } from './ProblemBlocks'
 import { StepCard } from './StepCard'
 
@@ -54,14 +53,6 @@ function newProblem(topic: Topic): Problem | null {
   if (templates.length === 0) return null
   const seed = randomSeed()
   return generateProblem(createRandom(seed).pick(templates), seed)
-}
-
-type Reward = {
-  xp: number
-  before: LevelState
-  after: LevelState
-  /** この 1 問で今日のノルマを達成したときの、ストリークの変化 */
-  streak?: { from: number; to: number }
 }
 
 function Practice({
@@ -146,7 +137,10 @@ function Practice({
 
   const handleNext = () => {
     if (inDaily) {
-      navigate(nextDaily ? dailyPracticePath(nextDaily) : '/daily')
+      // 最後の 1 問のあとは、デイリーの画面で達成の演出を出す
+      navigate(nextDaily ? dailyPracticePath(nextDaily) : '/daily', {
+        state: nextDaily ? undefined : { justCompleted: true },
+      })
       window.scrollTo({ top: 0, behavior: 'auto' })
       return
     }
@@ -179,7 +173,7 @@ function Practice({
               : '間違えたステップの正解と解説を確認します。'}
           </AnswerFeedback>
         )}
-        {reward && <RewardRow reward={reward} />}
+        {reward && <RewardPanel reward={reward} />}
         {saveError && (
           <p role="alert" className="text-body-sm text-ink-body">
             この解答を記録に保存できませんでした。ブラウザの保存領域がいっぱいか、プライベートモードの可能性があります。
@@ -232,70 +226,6 @@ function Practice({
         )}
       </div>
     </>
-  )
-}
-
-/** 得た XP と、レベルアップ */
-function RewardRow({ reward }: { reward: Reward }) {
-  const reduceMotion = useReducedMotion()
-  const leveledUp = reward.after.level > reward.before.level
-  return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="-mt-6 flex flex-wrap items-center gap-3"
-    >
-      <span className="rounded-pill border border-line px-4 py-2 text-tag">+{reward.xp} XP</span>
-      <span className="text-caption text-ink-muted">
-        Lv.{reward.after.level}
-        {reward.after.nextLevelXp !== null &&
-          ` ・ 次のレベルまで ${reward.after.nextLevelXp - reward.after.xp} XP`}
-      </span>
-      {leveledUp && (
-        <motion.span
-          initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 380, damping: 16, delay: 0.5 }}
-          className="rounded-pill bg-ink px-4 py-2 text-tag text-on-ink"
-        >
-          LEVEL UP ・ Lv.{reward.before.level} → Lv.{reward.after.level}
-        </motion.span>
-      )}
-      {reward.streak && <StreakUp from={reward.streak.from} to={reward.streak.to} />}
-    </motion.div>
-  )
-}
-
-/** 今日のノルマを達成して、ストリークが伸びた瞬間の演出 */
-function StreakUp({ from, to }: { from: number; to: number }) {
-  const reduceMotion = useReducedMotion()
-  return (
-    <motion.div
-      role="status"
-      initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.6 }}
-      className="relative flex w-full items-center gap-6 overflow-hidden rounded-lg bg-sky-wash px-6 py-5"
-    >
-      <DigitalLines
-        count={8}
-        seed={21}
-        className="pointer-events-none absolute inset-0 size-full"
-      />
-      <div className="relative flex flex-col gap-1">
-        <span className="text-[13px] font-bold tracking-caps text-ink-muted">STREAK</span>
-        <span className="font-ja text-[15px] font-bold tracking-ja">今日のノルマ達成</span>
-      </div>
-      <span className="relative ml-auto flex items-baseline gap-2">
-        <AnimatedNumber
-          value={to}
-          from={from}
-          className="text-[44px] leading-none font-bold tracking-tight tabular-nums"
-        />
-        <span className="font-ja text-[15px] text-ink-body">日</span>
-      </span>
-    </motion.div>
   )
 }
 

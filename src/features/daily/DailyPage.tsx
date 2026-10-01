@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { AnswerFeedback } from '@/features/practice/AnswerFeedback'
@@ -14,6 +14,10 @@ export function DailyPage() {
   const plan = useDaily()
   const streak = useStreak()
   const next = nextDailyItem(plan)
+  // 最後の問題を解いて来たときだけ、達成の演出を出す（あとで開き直したときは静かに表示する）
+  const location = useLocation()
+  const justCompleted =
+    (location.state as { justCompleted?: boolean } | null)?.justCompleted === true
 
   return (
     <>
@@ -25,7 +29,7 @@ export function DailyPage() {
       {status === 'loading' ? null : (
         <div className="flex flex-col gap-10">
           {plan.complete && (
-            <AnswerFeedback correct title="今日のデイリー達成">
+            <AnswerFeedback correct celebrate={justCompleted} title="今日のデイリー達成">
               ストリークは {streak.current} 日になりました。明日も続けましょう。
             </AnswerFeedback>
           )}

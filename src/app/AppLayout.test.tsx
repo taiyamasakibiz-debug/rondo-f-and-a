@@ -120,8 +120,17 @@ describe('今日のデイリー', () => {
       await userEvent.click(await screen.findByRole('button', { name: new RegExp(nextLabel) }))
     }
 
-    expect(await screen.findByRole('status')).toHaveTextContent('今日のデイリー達成')
+    const done = await screen.findByRole('status')
+    expect(done).toHaveTextContent('今日のデイリー達成')
+    // 最後の問題から来たときだけ、達成の演出を出す
+    expect(within(done).getByTestId('burst')).toBeInTheDocument()
     expect(liveAttempts(useProgressStore.getState().attempts)).toHaveLength(3)
+
+    cleanup()
+    await renderAt('/daily')
+    const reopened = await screen.findByRole('status')
+    expect(reopened).toHaveTextContent('今日のデイリー達成')
+    expect(within(reopened).queryByTestId('burst')).not.toBeInTheDocument()
   })
 })
 
@@ -212,6 +221,78 @@ describe('認定テスト', () => {
     const examAttempts = store.getState().attempts.filter((a) => a.exam)
     expect(examAttempts).toHaveLength(5)
     expect(new Set(examAttempts.map((a) => a.exam!.id)).size).toBe(1)
+  })
+})
+
+describe('正解とレベルアップの演出', () => {
+  /** 仕訳ラボで全問正解 5 回（75 XP）。あと 5 XP で Lv.3 */
+  async function withJournalXp75() {
+    const { useProgressStore } = await import('@/progress/store')
+    await useProgressStore.getState().load()
+    const at = new Date(Date.now() - 86_400_000 * 3).toISOString()
+    const attempts = [1, 2, 3, 4, 5].map((seed) => ({
+      id: `journal-${seed}`,
+      templateId: 'journal.credit-sale',
+      topic: 'journal' as const,
+      seed,
+      earned: 1,
+      total: 1,
+      allCorrect: true,
+      steps: [],
+      durationMs: 1,
+      answeredAt: at,
+      createdAt: at,
+      updatedAt: at,
+    }))
+    await useProgressStore.getState().replaceAll({
+      attempts,
+      settings: useProgressStore.getState().settings,
+    })
+    return useProgressStore
+  }
+
+  async function solveCreditSale() {
+    const { params } = generateProblem(findTemplate('journal.credit-sale')!, 42)
+    const cash = (params.sales! * params.cashPercent!) / 100
+    await renderAt('/labs/journal/practice?template=journal.credit-sale&seed=42')
+    await userEvent.click(screen.getByRole('button', { name: '借方に行を追加' }))
+    await userEvent.selectOptions(screen.getByLabelText('借方 1 行目の科目'), '売掛金')
+    await userEvent.type(screen.getByLabelText('借方 1 行目の金額'), String(params.sales! - cash))
+    await userEvent.selectOptions(screen.getByLabelText('借方 2 行目の科目'), '現金')
+    await userEvent.type(screen.getByLabelText('借方 2 行目の金額'), String(cash))
+    await userEvent.selectOptions(screen.getByLabelText('貸方 1 行目の科目'), '売上')
+    await userEvent.type(screen.getByLabelText('貸方 1 行目の金額'), String(params.sales!))
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+  }
+
+  it('全問正解すると波紋が出て、経験値のバーが伸び、レベルが上がる', async () => {
+    const store = await withJournalXp75()
+    await solveCreditSale()
+
+    const feedback = (await screen.findAllByRole('status'))[0]!
+    expect(feedback).toHaveTextContent('全問正解')
+    expect(within(feedback).getByTestId('burst')).toBeInTheDocument()
+    expect(screen.getByText('+15 XP')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: '次のレベルまでの経験値' })).toHaveAttribute(
+      'aria-valuenow',
+      String(Math.round((10 / 70) * 100)),
+    )
+    // バーが満タンになったところで、レベルアップのカードに切り替わる
+    expect(await screen.findByText('LEVEL UP', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(screen.getByText('Lv.3')).toBeInTheDocument()
+    await store.getState().resetAll()
+  })
+
+  it('間違えたときは波紋を出さず、レベルも上がらない', async () => {
+    const store = await withJournalXp75()
+    await renderAt('/labs/journal/practice?template=journal.credit-sale&seed=42')
+    await userEvent.click(screen.getByRole('button', { name: /採点する/ }))
+    const feedback = (await screen.findAllByRole('status'))[0]!
+    expect(feedback).toHaveTextContent('INCORRECT')
+    expect(within(feedback).queryByTestId('burst')).not.toBeInTheDocument()
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    expect(screen.queryByText('LEVEL UP')).not.toBeInTheDocument()
+    await store.getState().resetAll()
   })
 })
 

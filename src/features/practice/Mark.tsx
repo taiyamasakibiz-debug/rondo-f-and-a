@@ -1,9 +1,12 @@
 import { motion, useReducedMotion } from 'motion/react'
+import { SPRING_POP } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 type MarkProps = {
   correct: boolean
   size?: 'sm' | 'lg'
+  /** 出るまでの時間（秒）。採点結果を上から順に出すときに使う */
+  delay?: number
   className?: string
 }
 
@@ -11,13 +14,13 @@ type MarkProps = {
  * Tessera の ○／× マーク。淡い色の丸に黒い記号。
  * 色だけで伝えないため、必ず「正解」「不正解」の文字と一緒に使う。
  */
-export function Mark({ correct, size = 'sm', className }: MarkProps) {
+export function Mark({ correct, size = 'sm', delay = 0, className }: MarkProps) {
   const reduceMotion = useReducedMotion()
   return (
     <motion.span
       initial={reduceMotion ? false : { scale: 0.4, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 420, damping: 18 }}
+      transition={{ ...SPRING_POP, delay }}
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-pill',
         correct ? 'bg-correct text-on-correct' : 'bg-incorrect text-on-incorrect',

@@ -78,7 +78,7 @@ export function StepCard({ index, step, params, input, onChange, result }: StepC
               result={result}
             />
           ) : (
-            <StepResultRow result={result} />
+            <StepResultRow result={result} index={index} />
           ))}
       </AnimatePresence>
     </section>
@@ -225,19 +225,21 @@ function ChoiceField({
   )
 }
 
-function StepResultRow({ result }: { result: StepResult }) {
+/** 採点結果の行。上のステップから順に、少しずつずらして出す */
+function StepResultRow({ result, index }: { result: StepResult; index: number }) {
   const reduceMotion = useReducedMotion()
+  const delay = 0.2 + index * 0.08
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.35, delay, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         'flex items-start gap-4 rounded-md p-4',
         result.correct ? 'bg-correct-50' : 'bg-incorrect-50',
       )}
     >
-      <Mark correct={result.correct} />
+      <Mark correct={result.correct} delay={delay + 0.1} />
       <div className="flex flex-col gap-1">
         <span
           className={cn(
