@@ -65,6 +65,8 @@ export type CashFlowByActivity = {
  * 仕訳の現金の動きを、相手の科目で営業・投資・財務に振り分ける（フリーモード用）。
  * 期首の B/S がないフリーモードでは、間接法より仕訳 1 本ずつと結びつくこの形の方が確かめやすい。
  * 相手の科目が複数の活動にまたがるときは、金額の割合で按分する。
+ * ただし固定資産などの売却で出た売却益・売却損は、売却の収入の一部なので投資活動に含める
+ * （売却益の分だけ営業活動に入ってしまわないように）。
  */
 export function cashFlowByActivity(
   accounts: readonly Account[],
@@ -88,9 +90,14 @@ export function cashFlowByActivity(
     )
     const base = sum(counterparts)
     if (base === 0) continue
+    const investingAccount = counterparts.find(
+      (line) => activityOf(byId.get(line.accountId)!.category) === 'investing',
+    )?.accountId
     for (const line of counterparts) {
       const share = (cashIn * line.amount) / base
-      totals.set(line.accountId, (totals.get(line.accountId) ?? 0) + share)
+      const category = byId.get(line.accountId)!.category
+      const target = investingAccount && isGainOrLoss(category) ? investingAccount : line.accountId
+      totals.set(target, (totals.get(target) ?? 0) + share)
     }
   }
 
@@ -114,6 +121,10 @@ export function cashFlowByActivity(
     cashBalance,
     reconciles: Math.abs(netChange - cashBalance) < 1e-6,
   }
+}
+
+function isGainOrLoss(category: Category): boolean {
+  return category === 'extraordinaryIncome' || category === 'extraordinaryLoss'
 }
 
 function sum(lines: readonly { amount: number }[]): number {

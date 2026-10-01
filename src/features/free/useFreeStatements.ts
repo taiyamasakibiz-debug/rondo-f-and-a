@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { buildStatements } from '@/domain/accounting/ledger'
 import { cashFlowByActivity } from '@/domain/cashflow/byActivity'
+import { indirectCashFlowFromLedger } from '@/domain/cashflow/indirectFromLedger'
 import { balanceSheetTotals, incomeStatementProfits } from '@/domain/statements'
 import { useLedgerStore } from '@/ledger/store'
 
@@ -15,6 +16,7 @@ export function useFreeStatements() {
       totals: balanceSheetTotals(statements.balanceSheet),
       profits: incomeStatementProfits(statements.incomeStatement),
       cashFlow: cashFlowByActivity(accounts, entries),
+      indirectCashFlow: indirectCashFlowFromLedger(accounts, entries),
     }
   }, [accounts, entries])
 }

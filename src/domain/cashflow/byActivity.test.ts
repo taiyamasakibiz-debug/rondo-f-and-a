@@ -93,3 +93,27 @@ describe('cashFlowByActivity', () => {
     expect(mixed.reconciles).toBe(true)
   })
 })
+
+describe('cashFlowByActivity（固定資産の売却）', () => {
+  it('売却益の分も含めて、売却の収入はすべて投資活動に入れる', () => {
+    const saleAccounts: Account[] = [
+      ...accounts,
+      { id: 'accumulated', name: '減価償却累計額', category: 'accumulatedDepreciation' },
+      { id: 'gain', name: '固定資産売却益', category: 'extraordinaryIncome' },
+    ]
+    const result = cashFlowByActivity(saleAccounts, [
+      entry(
+        [
+          ['cash', 500],
+          ['accumulated', 300],
+        ],
+        [
+          ['equipment', 700],
+          ['gain', 100],
+        ],
+      ),
+    ])
+    expect(result.activities.investing.total).toBe(500)
+    expect(result.activities.operating.total).toBe(0)
+  })
+})

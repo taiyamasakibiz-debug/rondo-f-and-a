@@ -169,6 +169,34 @@ describe('フリーモード', () => {
     expect(within(journal).getByLabelText('取引の説明')).toHaveValue('')
   })
 
+  it('キャッシュフローは直接法と間接法を切り替えられる', async () => {
+    const { useLedgerStore } = await import('@/ledger/store')
+    await useLedgerStore.getState().load()
+    await useLedgerStore.getState().reset()
+    await useLedgerStore.getState().startWithStarterAccounts()
+    const { accounts } = useLedgerStore.getState()
+    const id = (name: string) => accounts.find((account) => account.name === name)!.id
+    await useLedgerStore.getState().addEntry({
+      description: '現金で売り上げた',
+      debits: [{ accountId: id('現金預金'), amount: 500 }],
+      credits: [{ accountId: id('売上高'), amount: 500 }],
+    })
+    await renderAt('/free/cf')
+
+    const cf = await screen.findByRole('region', { name: /Cash Flow/ })
+    expect(within(cf).getByRole('radio', { name: '直接法' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    expect(within(cf).getByText('売上高')).toBeInTheDocument()
+
+    await userEvent.click(within(cf).getByRole('radio', { name: '間接法' }))
+    expect(within(cf).getByText('税引前当期純利益')).toBeInTheDocument()
+    expect(within(cf).getByText('小計')).toBeInTheDocument()
+    expect(within(cf).queryByText('売上高')).not.toBeInTheDocument()
+    await useLedgerStore.getState().reset()
+  })
+
   it('別ウィンドウ用のページは、ナビを省いてパネルだけを出す', async () => {
     await renderAt('/free/bs?window=1')
     expect(await screen.findByRole('region', { name: /Balance Sheet/ })).toBeInTheDocument()
