@@ -74,7 +74,7 @@ describe('コースのデータ', () => {
 
 describe('単元の状態', () => {
   it('型がない単元は準備中', () => {
-    expect(stateOf([], at(10, 1), 'fin-val')).toBe('preparing')
+    expect(stateOf([], at(10, 1), 'fin-fx')).toBe('preparing')
   })
 
   it('解いていなければ未着手、解いたら学習中', () => {
@@ -151,7 +151,8 @@ describe('Stage と次の単元', () => {
   it('準備中の単元は、修了にも前提にも数えない', () => {
     const course = computeCourse([], DEFAULT_SETTINGS, at(10, 1))
     const stage2 = course.stages[1]!
-    expect(stage2.gateUnits.map((p) => p.unit.id)).not.toContain('fin-val')
+    expect(stage2.units.find((p) => p.unit.id === 'fin-fx')!.state).toBe('preparing')
+    expect(stage2.gateUnits.map((p) => p.unit.id)).not.toContain('fin-fx')
     // 事例Ⅳ総合は問題があるので、Stage 3 の修了に数える
     expect(course.stages[2]!.gateUnits.map((p) => p.unit.id)).toEqual(['case4-int'])
   })

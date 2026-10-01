@@ -144,7 +144,7 @@ describe('examEligibility', () => {
   })
 
   it('1 つ下の認定がなければ受けられない', () => {
-    const practised = touched(...stage1, 'fin-npv', 'mgt-seg')
+    const practised = touched(...stage1, 'fin-npv', 'mgt-seg', 'fin-val')
     expect(examEligibility(practised, 'silver', DEFAULT_SETTINGS, now)).toMatchObject({
       eligible: false,
       reason: expect.stringContaining('ブロンズ'),
@@ -192,17 +192,21 @@ describe('buildExam', () => {
   })
 
   it('問題がない単元の枠は飛ばし、足りない問題は最初の枠から使い回す', () => {
-    // セグメント（と企業価値）の問題がないとき、シルバーの最後の枠は飛ばされる
-    const withoutSegment = PROBLEM_TEMPLATES.filter((t) => !t.id.startsWith('seg.'))
-    const units = buildExam('silver', 1, withoutSegment).items.map((item) =>
+    // セグメントと企業価値の問題がないとき、シルバーの最後の枠は飛ばされる
+    const withoutLastSlot = PROBLEM_TEMPLATES.filter(
+      (t) => !t.id.startsWith('seg.') && !t.id.startsWith('val.'),
+    )
+    const units = buildExam('silver', 1, withoutLastSlot).items.map((item) =>
       unitOf(item.templateId),
     )
     expect(units).toEqual(['acc-ca', 'mgt-cvp', 'acc-cf', 'fin-npv', 'acc-ca'])
   })
 
   it('同じ単元から続けて出すときは、別の型を選ぶ', () => {
-    // セグメントの問題がないと、経営分析から 2 問出る
-    const withoutSegment = PROBLEM_TEMPLATES.filter((t) => !t.id.startsWith('seg.'))
+    // セグメントと企業価値の問題がないと、経営分析から 2 問出る
+    const withoutSegment = PROBLEM_TEMPLATES.filter(
+      (t) => !t.id.startsWith('seg.') && !t.id.startsWith('val.'),
+    )
     for (const seed of [1, 2, 3, 4, 5]) {
       const analysis = buildExam('silver', seed, withoutSegment).items.filter((item) =>
         item.templateId.startsWith('analysis.'),
