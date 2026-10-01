@@ -1,10 +1,14 @@
-import { motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, ScrollRestoration, useLocation, useSearchParams } from 'react-router'
 import { AmbientLines } from '@/components/AmbientLines'
 import { useTextInputFocused } from '@/components/useTextInputFocused'
 import { feedback } from '@/feedback'
+import { EASE_OUT } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { PwaUpdatePrompt } from './PwaUpdatePrompt'
+import { Splash } from './Splash'
+import { markSplashHandled, shouldShowSplash } from './splashState'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
@@ -28,6 +32,14 @@ export function AppLayout() {
   // 別ウィンドウで開いたパネル（?window=1）は、ナビを省いて中身だけを見せる
   const windowMode = searchParams.get('window') === '1'
   const typing = useTextInputFocused()
+  // 開き直したときの 1 回だけ、トップで起動画面を出す。ほかの画面から入ったときは出さない
+  const [splashOpen, setSplashOpen] = useState(() =>
+    shouldShowSplash(location.pathname, windowMode),
+  )
+  const [revealFromSplash] = useState(splashOpen)
+  useEffect(() => markSplashHandled(), [])
+  // 時間が来たらホームに切り替える（Splash の時計が巻き直されないよう、関数は作り直さない）
+  const closeSplash = useCallback(() => setSplashOpen(false), [])
 
   if (windowMode) {
     return (
@@ -41,71 +53,95 @@ export function AppLayout() {
 
   const isHome = location.pathname === '/'
 
+  // 起動画面から入ったときは、奥からホームがゆっくり浮かんでくる
+  const mainState =
+    revealFromSplash && !reduceMotion
+      ? splashOpen
+        ? { opacity: 0, scale: 0.95 }
+        : { opacity: 1, scale: 1 }
+      : undefined
+  const chromeFade = cn(
+    'transition-opacity duration-700',
+    revealFromSplash && splashOpen && 'opacity-0',
+  )
+
   return (
-    <div className="relative flex min-h-dvh flex-col bg-background text-foreground">
-      <Backdrop key={isHome ? 'home' : 'page'} full={isHome} />
-      {/* Tessera のナビ：半透明の白いピル */}
-      <header className="sticky top-0 z-40 px-4 pt-4 md:px-6 md:pt-6">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-pill border border-line bg-white/60 px-6 backdrop-blur-md md:h-16 md:pr-2 md:pl-8">
-          <NavLink to="/" aria-label="Rondo ホーム">
-            <img src="/brand/logo-horizontal.svg" alt="Rondo" className="h-10 w-auto" />
-          </NavLink>
-          <nav aria-label="メインナビゲーション" className="hidden items-center gap-1 md:flex">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={() => feedback('tap')}
-                className={(state) => cn(navLinkClass(state), 'px-5')}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main className="relative mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-28 md:px-6 md:pt-14 md:pb-24">
-        <motion.div
-          key={location.pathname}
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <Outlet />
-        </motion.div>
-      </main>
-
-      {/* スマホは画面下のピル型タブで移動する（PC の上のナビと同じ表示）。Tessera はアイコンを矢印だけにするため文字だけで示す。
-          キーボードが出ている間は、スクロールでずれて入力の邪魔になるので隠す */}
-      <nav
-        aria-label="メインナビゲーション（モバイル）"
-        className={cn(
-          'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-40 md:hidden',
-          typing && 'hidden',
-        )}
+    <>
+      <div
+        inert={splashOpen}
+        className="relative flex min-h-dvh flex-col bg-background text-foreground"
       >
-        <ul className="grid grid-cols-4 rounded-pill border border-line bg-white/60 p-1.5 backdrop-blur-md">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.end}
-                onClick={() => feedback('tap')}
-                className={navLinkClass}
-              >
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+        <Backdrop key={isHome ? 'home' : 'page'} full={isHome} />
+        {/* Tessera のナビ：半透明の白いピル */}
+        <header className={cn('sticky top-0 z-40 px-4 pt-4 md:px-6 md:pt-6', chromeFade)}>
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-pill border border-line bg-white/60 px-6 backdrop-blur-md md:h-16 md:pr-2 md:pl-8">
+            <NavLink to="/" aria-label="Rondo ホーム">
+              <img src="/brand/logo-horizontal.svg" alt="Rondo" className="h-10 w-auto" />
+            </NavLink>
+            <nav aria-label="メインナビゲーション" className="hidden items-center gap-1 md:flex">
+              {NAV_ITEMS.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  onClick={() => feedback('tap')}
+                  className={(state) => cn(navLinkClass(state), 'px-5')}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        </header>
 
-      <PwaUpdatePrompt />
-      {/* 画面を移ったら先頭から表示する（戻るときは元の位置に戻す） */}
-      <ScrollRestoration />
-    </div>
+        <motion.main
+          initial={mainState}
+          animate={mainState}
+          transition={{ duration: 0.8, ease: EASE_OUT }}
+          className="relative mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-28 md:px-6 md:pt-14 md:pb-24"
+        >
+          <motion.div
+            key={location.pathname}
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Outlet />
+          </motion.div>
+        </motion.main>
+
+        {/* スマホは画面下のピル型タブで移動する（PC の上のナビと同じ表示）。Tessera はアイコンを矢印だけにするため文字だけで示す。
+          キーボードが出ている間は、スクロールでずれて入力の邪魔になるので隠す */}
+        <nav
+          aria-label="メインナビゲーション（モバイル）"
+          className={cn(
+            'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-40 md:hidden',
+            chromeFade,
+            typing && 'hidden',
+          )}
+        >
+          <ul className="grid grid-cols-4 rounded-pill border border-line bg-white/60 p-1.5 backdrop-blur-md">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  onClick={() => feedback('tap')}
+                  className={navLinkClass}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <PwaUpdatePrompt />
+        {/* 画面を移ったら先頭から表示する（戻るときは元の位置に戻す） */}
+        <ScrollRestoration />
+      </div>
+      <AnimatePresence>{splashOpen && <Splash onDone={closeSplash} />}</AnimatePresence>
+    </>
   )
 }
 
