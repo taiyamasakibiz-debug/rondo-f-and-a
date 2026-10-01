@@ -68,7 +68,8 @@ describe('useTextInputFocused', () => {
 })
 
 describe('useTextInputFocused（キーボードだけ閉じたとき）', () => {
-  it('フォーカスが残っていても、見えている高さが元に戻ったら false にする', async () => {
+  /** visualViewport の代わり。見えている高さを変えて、resize を知らせる */
+  function mockViewport() {
     const listeners = new Set<() => void>()
     const viewport = {
       height: window.innerHeight,
@@ -82,15 +83,24 @@ describe('useTextInputFocused（キーボードだけ閉じたとき）', () => 
         viewport.height = height
         for (const listener of listeners) listener()
       })
+    return { resize, full: window.innerHeight }
+  }
+  const wait = (ms: number) => act(() => new Promise((resolve) => setTimeout(resolve, ms)))
+
+  it('フォーカスが残っていても、見えている高さが元に戻った状態が続いたら false にする', async () => {
+    const { resize, full } = mockViewport()
     try {
       render(<Probe />)
       act(() => screen.getByLabelText('金額').focus())
       await settle()
       expect(screen.getByText('入力中')).toBeInTheDocument()
 
-      resize(window.innerHeight - 300) // キーボードが出た
+      resize(full - 300) // キーボードが出た
       expect(screen.getByText('入力中')).toBeInTheDocument()
-      resize(window.innerHeight) // キーボードだけ閉じた（フォーカスは残る）
+      resize(full) // キーボードだけ閉じた（フォーカスは残る）
+      // すぐには戻さない（スクロールの途中の一瞬の変化かもしれない）
+      expect(screen.getByText('入力中')).toBeInTheDocument()
+      await wait(350)
       expect(screen.getByText('入力していない')).toBeInTheDocument()
 
       // もう一度入力欄を触ると、また隠す
@@ -98,6 +108,42 @@ describe('useTextInputFocused（キーボードだけ閉じたとき）', () => 
       await settle()
       expect(screen.getByText('入力中')).toBeInTheDocument()
     } finally {
+      Reflect.deleteProperty(window, 'visualViewport')
+    }
+  })
+
+  it('キーボードを出したままスクロールして、高さが一瞬だけ戻っても、隠したままにする', async () => {
+    const { resize, full } = mockViewport()
+    try {
+      render(<Probe />)
+      act(() => screen.getByLabelText('金額').focus())
+      await settle()
+      resize(full - 300) // キーボードが出た
+      resize(full) // スクロールの途中で、一瞬だけ高さが戻った
+      await wait(100)
+      resize(full - 300) // まだキーボードは出ている
+      await wait(350)
+      expect(screen.getByText('入力中')).toBeInTheDocument()
+    } finally {
+      Reflect.deleteProperty(window, 'visualViewport')
+    }
+  })
+
+  it('ページの高さ（innerHeight）が一緒に縮んでも、キーボードが出ているとみなす', async () => {
+    const { resize, full } = mockViewport()
+    const original = window.innerHeight
+    try {
+      render(<Probe />)
+      act(() => screen.getByLabelText('金額').focus())
+      await settle()
+      resize(full - 300) // キーボードが出た
+      // iOS でスクロールすると、innerHeight も見えている高さまで縮むことがある
+      Object.defineProperty(window, 'innerHeight', { value: full - 300, configurable: true })
+      resize(full - 300)
+      await wait(350)
+      expect(screen.getByText('入力中')).toBeInTheDocument()
+    } finally {
+      Object.defineProperty(window, 'innerHeight', { value: original, configurable: true })
       Reflect.deleteProperty(window, 'visualViewport')
     }
   })

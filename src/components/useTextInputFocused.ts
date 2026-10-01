@@ -33,10 +33,16 @@ export function isTextEntry(element: Element | null): boolean {
 /** 見えている高さがこれだけ減っていたら、キーボードが出ているとみなす */
 const KEYBOARD_MIN_PX = 120
 
-function viewportShrunk(): boolean {
+/**
+ * 見えている高さが元に戻ってから、キーボードが閉じたとみなすまでの時間。
+ * キーボードを出したままスクロールすると、iOS では高さが一瞬だけ変わることがあり、そのたびに下のタブが出てしまうため
+ */
+const CLOSE_SETTLE_MS = 300
+
+/** 見えている高さ */
+function visibleHeight(): number {
   const viewport = window.visualViewport
-  if (!viewport) return false
-  return window.innerHeight - viewport.height * viewport.scale > KEYBOARD_MIN_PX
+  return viewport ? viewport.height * viewport.scale : window.innerHeight
 }
 
 /**
@@ -44,8 +50,9 @@ function viewportShrunk(): boolean {
  * キーボードが出ている間は、画面下に固定した要素がスクロールでずれて浮いてしまう
  * （iOS Safari は固定要素をキーボードの上ではなくページ全体の下端に合わせる）ので、その間は隠すのに使う。
  *
- * フォーカスが残ったままキーボードだけ閉じた場合（キーボードの「完了」や Android の戻る）も、
- * 見えている高さが元に戻った時点ですぐに false にする。
+ * フォーカスが残ったままキーボードだけ閉じた場合（Android の戻るなど）も、見えている高さが元に戻ったら false にする。
+ * キーボードが出ているかは、入力を始める前の見えている高さと比べて決める（ページの高さ innerHeight とは比べない。
+ * iOS ではキーボードを出したままスクロールすると、innerHeight も一緒に縮むことがあり、閉じたと勘違いしてしまうため）
  */
 export function useTextInputFocused(): boolean {
   const [focused, setFocused] = useState(() => isTextEntry(document.activeElement))
@@ -53,34 +60,53 @@ export function useTextInputFocused(): boolean {
   const [closedWhileFocused, setClosedWhileFocused] = useState(false)
 
   useEffect(() => {
-    let opened = viewportShrunk()
+    // キーボードが出ていないときの見えている高さ（入力していない間に測り直す）
+    let fullHeight = visibleHeight()
+    const keyboardShown = () => fullHeight - visibleHeight() > KEYBOARD_MIN_PX
+    let opened = isTextEntry(document.activeElement) && keyboardShown()
     // 入力欄から入力欄へ移るときは focusout → focusin の順に来るので、落ち着いてから確かめる
     let timer: ReturnType<typeof setTimeout> | undefined
+    let closeTimer: ReturnType<typeof setTimeout> | undefined
     const update = () => {
       clearTimeout(timer)
       timer = setTimeout(() => {
         const next = isTextEntry(document.activeElement)
         setFocused(next)
         if (next) {
-          opened = viewportShrunk()
+          opened = keyboardShown()
           setClosedWhileFocused(false)
+        } else {
+          clearTimeout(closeTimer)
+          opened = false
         }
       }, 0)
     }
     const onFocusOut = (event: FocusEvent) => {
-      // 入力欄の外へフォーカスが外れたとき（キーボードを閉じたときなど）は、待たずにすぐ戻す
+      // 入力欄の外へフォーカスが外れたとき（キーボードの ✓ で閉じたときなど）は、待たずにすぐ戻す
       const next = event.relatedTarget instanceof Element ? event.relatedTarget : null
       if (!isTextEntry(next)) setFocused(false)
       update()
     }
     const onResize = () => {
-      const shrunk = viewportShrunk()
-      if (shrunk) {
+      if (!isTextEntry(document.activeElement)) {
+        // 入力していないときの高さを、キーボードがないときの高さとして覚える（画面の回転などにも追いつく）
+        fullHeight = visibleHeight()
+        return
+      }
+      if (keyboardShown()) {
         opened = true
+        clearTimeout(closeTimer)
+        closeTimer = undefined
         setClosedWhileFocused(false)
-      } else if (opened) {
-        opened = false
-        setClosedWhileFocused(true)
+      } else if (opened && closeTimer === undefined) {
+        // 高さが戻った状態がしばらく続いたら、キーボードが閉じたとみなす
+        closeTimer = setTimeout(() => {
+          closeTimer = undefined
+          if (!keyboardShown()) {
+            opened = false
+            setClosedWhileFocused(true)
+          }
+        }, CLOSE_SETTLE_MS)
       }
     }
     document.addEventListener('focusin', update)
@@ -88,6 +114,7 @@ export function useTextInputFocused(): boolean {
     window.visualViewport?.addEventListener('resize', onResize)
     return () => {
       clearTimeout(timer)
+      clearTimeout(closeTimer)
       document.removeEventListener('focusin', update)
       document.removeEventListener('focusout', onFocusOut)
       window.visualViewport?.removeEventListener('resize', onResize)
