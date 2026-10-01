@@ -168,7 +168,7 @@ export const UNITS: readonly Unit[] = [
     stage: 3,
     priority: 'must',
     prerequisites: ['acc-ca', 'acc-cf', 'mgt-cvp', 'fin-npv'],
-    templateIds: [],
+    templateIds: ['case4.peer-and-price-cut', 'case4.investment-funding'],
     expectedMinutes: 12,
   },
 ]

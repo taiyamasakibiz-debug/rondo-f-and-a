@@ -155,16 +155,18 @@ describe('examEligibility', () => {
     })
   })
 
-  it('問題がまだない Stage のテストは、準備中', () => {
-    const attempts = [
+  it('ゴールドは、シルバーのあと、事例Ⅳ総合の問題を 1 回以上解くと受けられる', () => {
+    const certified = [
       ...touched(...stage1, 'fin-npv'),
       ...exam('bronze', [5, 5, 5, 5, 5]),
       ...exam('silver', [5, 5, 5, 5, 5], { passRatio: 0.7 }),
     ]
-    expect(examEligibility(attempts, 'gold', DEFAULT_SETTINGS, now)).toMatchObject({
+    expect(examEligibility(certified, 'gold', DEFAULT_SETTINGS, now)).toMatchObject({
       eligible: false,
-      reason: expect.stringContaining('準備中'),
+      reason: expect.stringContaining('事例Ⅳ総合'),
     })
+    const withCase4 = [...certified, ...touched('case4-int')]
+    expect(examEligibility(withCase4, 'gold', DEFAULT_SETTINGS, now)).toEqual({ eligible: true })
   })
 })
 
@@ -207,8 +209,15 @@ describe('buildExam', () => {
     expect(buildExam('silver', 1).timeLimitMs).toBe(25 * 60_000)
   })
 
-  it('問題がまだない Stage は、出題が空になる', () => {
-    expect(buildExam('gold', 1)).toEqual({ items: [], timeLimitMs: 0 })
+  it('ゴールドは、事例Ⅳ総合の大問 1 問を 20 分で解く', () => {
+    const { items, timeLimitMs } = buildExam('gold', 1)
+    expect(items).toHaveLength(1)
+    expect(unitOf(items[0]!.templateId)).toBe('case4-int')
+    expect(timeLimitMs).toBe(20 * 60_000)
+  })
+
+  it('出題できる問題がない認定は、出題が空になる', () => {
+    expect(buildExam('gold', 1, [])).toEqual({ items: [], timeLimitMs: 0 })
   })
 
   it('テンプレートを渡して、出題の元を差し替えられる', () => {

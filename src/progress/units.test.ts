@@ -152,8 +152,8 @@ describe('Stage と次の単元', () => {
     const course = computeCourse([], DEFAULT_SETTINGS, at(10, 1))
     const stage1 = course.stages[0]!
     expect(stage1.gateUnits.map((p) => p.unit.id)).not.toContain('fin-tvm')
-    // Stage 3 は問題がまだないので、取り組む Stage にならない
-    expect(course.stages[2]!.gateUnits).toHaveLength(0)
+    // 事例Ⅳ総合は問題があるので、Stage 3 の修了に数える
+    expect(course.stages[2]!.gateUnits.map((p) => p.unit.id)).toEqual(['case4-int'])
   })
 
   it('学習中の単元を、未着手より先に出す', () => {

@@ -1,4 +1,4 @@
-import { presentValueFactor } from '@/domain/investment/investment'
+import { annuityFactor, presentValueFactor } from '@/domain/investment/investment'
 import { formatNumber } from '@/engine/numbers'
 import type { Block } from '@/engine/types'
 
@@ -52,5 +52,20 @@ export function factorBlock(rate: number, years: number): Block {
     caption: `複利現価係数（割引率 ${formatNumber(rate * 100)}%）`,
     headers: ['年', ...factors.map((_, i) => `${i + 1} 年`)],
     rows: [['係数', ...factors.map((factor) => formatNumber(factor, 3))]],
+  }
+}
+
+/** 試験と同じく、小数第 3 位までの年金現価係数（years 年分） */
+export function annuityFactorOf(rate: number, years: number): number {
+  return annuityFactor(rate, years, 3)
+}
+
+/** 年金現価係数の表（その割引率・年数の 1 つだけ。複利現価係数と並べると、どちらを使うかで答えがずれるため） */
+export function annuityFactorBlock(rate: number, years: number): Block {
+  return {
+    type: 'table',
+    caption: `年金現価係数（割引率 ${formatNumber(rate * 100)}%）`,
+    headers: ['年数', `${years} 年`],
+    rows: [['係数', formatNumber(annuityFactorOf(rate, years), 3)]],
   }
 }

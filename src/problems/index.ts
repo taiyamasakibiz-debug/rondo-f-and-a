@@ -1,4 +1,6 @@
 import type { ProblemTemplate, Topic } from '@/engine/types'
+import { investmentAndFunding } from './_private/case4/investment-and-funding'
+import { peerAndPriceCut } from './_private/case4/peer-and-price-cut'
 import { compareWithPeer } from './analysis/compare'
 import { efficiency, profitability, safety } from './analysis/indicators'
 import { receivableTurnoverDays } from './analysis/turnover-days'
@@ -43,6 +45,9 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   fixedAssetSale,
   prepaidExpense,
   badDebtWriteOff,
+  // 事例Ⅳ総合（過去問の構造を参考にしたもの。公開しない）
+  peerAndPriceCut,
+  investmentAndFunding,
 ]
 
 export function templatesForTopic(topic: Topic): ProblemTemplate[] {
