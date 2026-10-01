@@ -276,7 +276,7 @@ describe('認定テスト', () => {
     })
     return useProgressStore
   }
-  const STAGE1 = ['acc-bs-pl', 'acc-ca', 'acc-cf', 'mgt-cvp']
+  const STAGE1 = ['acc-bs-pl', 'acc-ca', 'acc-cf', 'mgt-cvp', 'fin-tvm']
 
   it('1 つ下の認定がないシルバーは受けられない', async () => {
     await withPractice([...STAGE1, 'fin-npv'])

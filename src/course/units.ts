@@ -118,7 +118,7 @@ export const UNITS: readonly Unit[] = [
     stage: 1,
     priority: 'must',
     prerequisites: ['acc-bs-pl'],
-    templateIds: [],
+    templateIds: ['tvm.payment-plans', 'tvm.perpetuity'],
     expectedMinutes: 3,
   },
   {

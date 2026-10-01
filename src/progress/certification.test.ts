@@ -130,7 +130,7 @@ describe('certificationOf', () => {
 })
 
 describe('examEligibility', () => {
-  const stage1 = ['acc-bs-pl', 'acc-ca', 'acc-cf', 'mgt-cvp']
+  const stage1 = ['acc-bs-pl', 'acc-ca', 'acc-cf', 'mgt-cvp', 'fin-tvm']
 
   it('Stage 1 の単元を 1 回ずつ解くまで、ブロンズは受けられない', () => {
     const result = examEligibility(touched('mgt-cvp'), 'bronze', DEFAULT_SETTINGS, now)
@@ -174,19 +174,31 @@ describe('buildExam', () => {
   const unitOf = (templateId: string) =>
     UNITS.find((unit) => unit.templateIds.includes(templateId))!.id
 
-  it('ブロンズは、仕訳・経営分析・CVP・CF の単元から 1 問ずつ出し、足りない 1 問は使い回す', () => {
+  it('ブロンズは、仕訳・経営分析・CVP・CF・時間価値の単元から 1 問ずつ出す', () => {
     const { items } = buildExam('bronze', 1)
     expect(items).toHaveLength(TIER_RULES.bronze.size)
-    const units = items.map((item) => unitOf(item.templateId))
-    expect(units.slice(0, 4)).toEqual(['acc-bs-pl', 'acc-ca', 'mgt-cvp', 'acc-cf'])
-    // 時間価値は問題がまだないので、最初の枠（仕訳）に戻る
-    expect(units[4]).toBe('acc-bs-pl')
+    expect(items.map((item) => unitOf(item.templateId))).toEqual([
+      'acc-bs-pl',
+      'acc-ca',
+      'mgt-cvp',
+      'acc-cf',
+      'fin-tvm',
+    ])
+  })
+
+  it('問題がない単元の枠は飛ばし、足りない問題は最初の枠から使い回す', () => {
+    // シルバーの最後の枠（セグメント／企業価値）は、まだ問題がない
+    const units = buildExam('silver', 1).items.map((item) => unitOf(item.templateId))
+    expect(units).toEqual(['acc-ca', 'mgt-cvp', 'acc-cf', 'fin-npv', 'acc-ca'])
   })
 
   it('同じ単元から続けて出すときは、別の型を選ぶ', () => {
-    const { items } = buildExam('bronze', 3)
-    const journal = items.filter((item) => item.templateId.startsWith('journal.'))
-    expect(new Set(journal.map((item) => item.templateId)).size).toBe(journal.length)
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const analysis = buildExam('silver', seed).items.filter((item) =>
+        item.templateId.startsWith('analysis.'),
+      )
+      expect(new Set(analysis.map((item) => item.templateId)).size).toBe(analysis.length)
+    }
   })
 
   it('数値（シード）は問題ごとに違い、同じシードなら同じ問題になる', () => {
@@ -203,7 +215,7 @@ describe('buildExam', () => {
   })
 
   it('制限時間は、出題した問題の想定時間の合計 × 係数（5 分単位）', () => {
-    // 仕訳 3 + 分析 4 + CVP 5 + CF 5 + 仕訳 3 = 20 分 → ×1.3 = 26 分 → 25 分
+    // 仕訳 3 + 分析 4 + CVP 5 + CF 5 + 時間価値 3 = 20 分 → ×1.3 = 26 分 → 25 分
     expect(buildExam('bronze', 1).timeLimitMs).toBe(25 * 60_000)
     // 分析 4 + CVP 5 + CF 5 + NPV 7 + 分析 4 = 25 分 → ×1.0 = 25 分
     expect(buildExam('silver', 1).timeLimitMs).toBe(25 * 60_000)

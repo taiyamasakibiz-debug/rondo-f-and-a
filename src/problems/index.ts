@@ -3,6 +3,8 @@ import { investmentAndFunding } from './_private/case4/investment-and-funding'
 import { peerAndPriceCut } from './_private/case4/peer-and-price-cut'
 import { replacementFunding } from './_private/case4/replacement-funding'
 import { segmentWithdrawal } from './_private/case4/segment-withdrawal'
+import { paymentPlans } from './_private/tvm/payment-plans'
+import { perpetuity } from './_private/tvm/perpetuity'
 import { compareWithPeer } from './analysis/compare'
 import { efficiency, profitability, safety } from './analysis/indicators'
 import { receivableTurnoverDays } from './analysis/turnover-days'
@@ -47,6 +49,9 @@ export const PROBLEM_TEMPLATES: readonly ProblemTemplate[] = [
   fixedAssetSale,
   prepaidExpense,
   badDebtWriteOff,
+  // 資金の時間価値（過去問の構造を参考にしたもの。公開しない）
+  paymentPlans,
+  perpetuity,
   // 事例Ⅳ総合（過去問の構造を参考にしたもの。公開しない）
   peerAndPriceCut,
   investmentAndFunding,
