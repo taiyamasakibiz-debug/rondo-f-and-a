@@ -196,10 +196,6 @@ export function findUnit(id: string): Unit | undefined {
   return UNITS.find((unit) => unit.id === id)
 }
 
-export function findStage(id: StageId): Stage {
-  return STAGES.find((stage) => stage.id === id)!
-}
-
 /** 単元の問題を解く画面（単元の最初の型のラボで開き、その単元の型だけを出す） */
 export function unitPracticePath(
   unit: Unit,

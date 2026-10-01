@@ -261,7 +261,8 @@ function Practice({
           <span className="font-ja text-[13px] font-bold tracking-ja">{unit.name}</span>
         </p>
       )}
-      <PageHeader title={lab.nameEn} subtitle={template.title} />
+      {/* 単元から開いたときは、ほかのラボの問題も出るので、見出しは問題そのもののラボにする */}
+      <PageHeader title={(findLab(template.topic) ?? lab).nameEn} subtitle={template.title} />
 
       <div className="flex flex-col gap-12">
         {shown && (

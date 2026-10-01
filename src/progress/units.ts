@@ -1,5 +1,6 @@
 import { STAGES, type Stage, type StageId, UNITS, type Unit } from '@/course/units'
 import { type DayKey, dayKey, daysBetween } from './day'
+import { median, recentWeightedRatio } from './scoring'
 import { type Attempt, type Settings, liveAttempts } from './types'
 
 /**
@@ -89,29 +90,11 @@ function ratio(items: readonly { earned: number; total: number }[]): number {
   return total === 0 ? 0 : items.reduce((sum, item) => sum + item.earned, 0) / total
 }
 
-/** 直近の解答の得点率。新しい解答ほど重く数える */
-function weightedAccuracy(attempts: readonly Attempt[]): number | null {
-  const recent = attempts.slice(-UNIT_RULES.accuracyWindow).reverse()
-  let weighted = 0
-  let weights = 0
-  recent.forEach((attempt, i) => {
-    const weight = UNIT_RULES.accuracyDecay ** i
-    weighted += (attempt.earned / attempt.total) * weight
-    weights += weight
-  })
-  return weights === 0 ? null : weighted / weights
-}
-
 /** 速さ：直近 5 回の所要時間の中央値を、想定時間で割る */
 function speedOf(unit: Unit, own: readonly Attempt[]): number | null {
-  const recent = own
-    .slice(-UNIT_RULES.speedWindow)
-    .map((attempt) => attempt.durationMs)
-    .sort((a, b) => a - b)
+  const recent = own.slice(-UNIT_RULES.speedWindow).map((attempt) => attempt.durationMs)
   if (recent.length === 0) return null
-  const mid = Math.floor(recent.length / 2)
-  const median = recent.length % 2 === 1 ? recent[mid]! : (recent[mid - 1]! + recent[mid]!) / 2
-  return median / (unit.expectedMinutes * 60_000)
+  return median(recent) / (unit.expectedMinutes * 60_000)
 }
 
 type Evaluation = {
@@ -158,7 +141,7 @@ function evaluateUnit(
     soFar.push(attempt)
     if (gap !== null && gap >= UNIT_RULES.spacedDays) spaced.push(attempt)
 
-    accuracy = weightedAccuracy(soFar)
+    accuracy = recentWeightedRatio(soFar, UNIT_RULES.accuracyWindow, UNIT_RULES.accuracyDecay)
     retention = spaced.length === 0 ? null : ratio(spaced.slice(-UNIT_RULES.retentionWindow))
     meets =
       lastDayByTemplate.size === unit.templateIds.length &&

@@ -1,6 +1,7 @@
 import type { Unit } from '@/course/units'
 import { dayKey, daysBetween } from './day'
 import { masteryDeadline } from './phase'
+import { median } from './scoring'
 import { type Attempt, type Settings, liveAttempts } from './types'
 import type { CourseProgress } from './units'
 
@@ -32,12 +33,6 @@ export type UnitTiming = {
   measured: number | null
   /** 補正後の想定時間（分） */
   minutes: number
-}
-
-function median(values: readonly number[]): number {
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2
 }
 
 export function unitTiming(unit: Unit, attempts: readonly Attempt[]): UnitTiming {

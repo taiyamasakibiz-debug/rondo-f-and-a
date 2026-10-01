@@ -1,5 +1,6 @@
 import type { Topic } from '@/engine/types'
 import type { Attempt } from './types'
+import { recentWeightedRatio } from './scoring'
 import { attemptXps, xpForAttempt } from './xp'
 
 export { xpForAttempt }
@@ -31,19 +32,10 @@ export function topicProgress(attempts: readonly Attempt[], topic: Topic): Topic
     .sort((a, b) => a.answeredAt.localeCompare(b.answeredAt))
   const xp = attemptXps(own).reduce((total, value) => total + value, 0)
 
-  const recent = own.slice(-MASTERY_WINDOW).reverse()
-  let weighted = 0
-  let weights = 0
-  recent.forEach((attempt, i) => {
-    const weight = MASTERY_DECAY ** i
-    weighted += (attempt.earned / attempt.total) * weight
-    weights += weight
-  })
-
   return {
     topic,
     attempts: own.length,
-    mastery: weights === 0 ? null : weighted / weights,
+    mastery: recentWeightedRatio(own, MASTERY_WINDOW, MASTERY_DECAY),
     xp,
   }
 }
